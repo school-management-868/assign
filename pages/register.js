@@ -5,8 +5,9 @@ import {
   updateProfile,
   onAuthStateChanged,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { useRouter } from "next/router";
+import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 
 export default function Register() {
   const [user, setUser] = useState();
@@ -21,6 +22,31 @@ export default function Register() {
     setIsActive((current) => !current);
   };
 
+  // const addData = async (name, email, sid) => {
+  //   try {
+  //     const docRef = await addDoc(collection(db, "users"), {
+  //       name: name,
+  //       email: email,
+  //       systemId: sid,
+  //     });
+  //     console.log("Document written with ID: ", docRef.id);
+  //   } catch (e) {
+  //     console.error("Error adding document: ", e);
+  //   }
+  // };
+
+  const addData = async (name, email, sid) => {
+    try {
+      await setDoc(doc(db, "users", name), {
+        name: name,
+        email: email,
+        mobile: sid,
+      });
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  };
+
   const handlesignup = (e) => {
     e.preventDefault();
     createUserWithEmailAndPassword(auth, email, password)
@@ -32,8 +58,9 @@ export default function Register() {
           displayName: name,
           sid: sid,
         }).then(() => {
-        //   alert(user.displayName + " " + user.email);
-            router.push("/login")
+          addData(name, email, sid);
+          //   alert(user.displayName + " " + user.email);
+          router.push("/login");
         });
         // ...
       })
@@ -54,7 +81,6 @@ export default function Register() {
         const uid = user.uid;
         // ...
       } else {
-        
         // User is signed out
         // ...
       }
@@ -86,9 +112,9 @@ export default function Register() {
               <div class="relative">
                 <input
                   class="p-2 rounded-xl border w-full"
-                  type="SystemId"
-                  name="SystemId"
-                  placeholder="System ID"
+                  type="mobile"
+                  name="mobile"
+                  placeholder="Mobile"
                   onChange={(e) => {
                     setSid(e.target.value);
                   }}
