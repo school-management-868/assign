@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import Nav from "../components/navbar";
 import { auth, db, storage } from "../firebase";
 
-export default function newAssignment() {
+export default function NewAssignment() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [branch, setBranch] = useState("");
@@ -90,7 +90,6 @@ export default function newAssignment() {
 
   return (
     <>
-      <Nav />
 
       <div className="w-screen">
         <div class="bg-gray-100 flex bg-local w-screen">

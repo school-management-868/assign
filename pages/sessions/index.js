@@ -11,9 +11,11 @@ export default function index() {
   const [to, setTo] = useState("");
   const [sessionList, setSessionList] = useState([])
   const [sessionSelected,setSessionSelected] = useState()
-  const [user, setUser] = useState();
+  const [curUser, setCurUser] = useState();
+
+
   const GetSessionList = async () => {
-    const docRef = collection(db, `users/${auth.currentUser.displayName}/sessions`);
+    const docRef = collection(db, `users/${curUser}/sessions`);
     const docSnap = await getDocs(docRef);
     var list = []
     docSnap.forEach((doc)=>{
@@ -23,24 +25,41 @@ export default function index() {
     setSessionList(list);
   };
 
-  // useEffect(() => {
-  //   onAuthStateChanged(auth,()=>{
-  //     setUser(auth.currentUser.displayName)
-  //   })
+  useEffect(() => {
+    GetSessionList()
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const currentUser = user.displayName;
+        setCurUser(currentUser)
+        // ...
+      } else {
+        // User is signed out
+        // ...
+      }
+    });
    
-  // }, [auth])
+  }, [auth,sessionList])
   
 const setCurrentSession= async(value)=>{
-  const ref = doc(db, "users", `${auth.currentUser.displayName}`);
+  const ref = doc(db, "users", `${curUser}`);
 
   // Set the "capital" field of the city 'DC'
-  await updateDoc(ref, {
+  if(value){
+    await updateDoc(ref, {
+    
     current_Session: value,
   });
+  alert("SuccessFull")
+}
+else{
+  alert("plese select session")
+}
 }
 
 const getCurrentSession = async()=>{
-  const docref = doc(db,"users",`${auth.currentUser.displayName}`)
+  const docref = doc(db,"users",`${curUser}`)
   const docSnap = await getDoc(docref);
   var fetchedSession;
   if(docSnap.exists){
@@ -147,14 +166,15 @@ const getCurrentSession = async()=>{
                       Mode*
                     </label>
                     <div>
-                      <select onClick={GetSessionList}
+                      <select 
                         onChange={(e) => {
                           setSessionSelected(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
                       >
-                        {sessionList.map((e,index)=>{return(<option key={index}>{e.Name}</option>)})}<option>Online</option>
+                        <option>Select_Session</option>
+                        {sessionList.map((e,index)=>{return(<option key={index}>{e.Name}</option>)})}
                       </select>
                     </div>
                   </div>

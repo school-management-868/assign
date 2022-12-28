@@ -17,6 +17,7 @@ function createFirebaseApp() {
     return getApp();
   } catch {
     return initializeApp(firebaseConfig);
+    
   }
 }
 
