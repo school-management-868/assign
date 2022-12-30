@@ -20,7 +20,6 @@ export default function index() {
     var list = []
     docSnap.forEach((doc)=>{
       list.push(doc.data())
-      console.log(doc.data());
     })
     setSessionList(list);
   };
@@ -64,7 +63,6 @@ const getCurrentSession = async()=>{
   var fetchedSession;
   if(docSnap.exists){
     fetchedSession = docSnap.data().current_Session
-    console.log(fetchedSession);
   }
 }
 

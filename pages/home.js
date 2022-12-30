@@ -26,7 +26,6 @@ export default function home() {
     var list1 = [];
     querySnapshot.forEach((doc) => {
       // doc.data() is never undefined for query doc snapshots
-      console.log(doc.id, " => ", doc.data());
       list1.push(doc.data());
     });
     setUsers(list1);

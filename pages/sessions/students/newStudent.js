@@ -1,100 +1,250 @@
-import { setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Nav from "../../../components/navbar";
 import Header from "../../../components/dropdown";
+import {
+  getDownloadURL,
+  ref,
+  uploadBytes,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { auth, db, storage } from "../../../firebase";
+import {
+  GetClassList,
+  curUser,
+  currentSession,
+  getCurrentSession,
+} from "../../firebase/functions";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 
 export default function NewStudent() {
   const router = useRouter();
+  const [sr, setSr] = useState("");
   const [name, setName] = useState("");
-  const [branch, setBranch] = useState("");
-  const [aName, setAName] = useState("");
-  const [roll, setRoll] = useState("");
-  const [cName, setCName] = useState("");
-  const [mode, setMode] = useState("Online");
-  const [type, setType] = useState("SoftCopy (Online)");
-  const [dead, setDead] = useState("1 Day");
-  const [discription, setDiscription] = useState("");
-  const [answer, setAnswer] = useState("Yes");
+  const [fName, setFName] = useState("");
+  const [mName, setMName] = useState("");
+  const [dob, setDob] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [fmobile, setFMobile] = useState("");
+  const [age, setAge] = useState("");
+  const [address, setAddress] = useState("");
+  const [className, setClassName] = useState("");
+  const [sectionName, setSectionName] = useState("");
+  const [transportStatus, setTransportStatus] = useState("");
+  const [busStopName, setBusStopName] = useState("");
+  const [busNumber, setBusNumber] = useState("");
+  const [category, setCategory] = useState("");
+  const [caste, setCaste] = useState("");
+  const [place, setPlace] = useState("");
+  const [city, setCity] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [gender, setGender] = useState("");
+  const [lSchool, setLSchool] = useState("");
+  const [lSchoolAdd, setLSchoolAdd] = useState("");
+  const [lSchoolBoard, setLSchoolBoard] = useState("");
+  const [lSchoolResult, setLSchoolResult] = useState("");
+  const [tcStatus, setTcStatus] = useState("");
+  const [rteStatus, setRteStatus] = useState("");
+  const [admissionDate, setAdmissionDate] = useState("");
+  const [aadharStatus, setAadharStatus] = useState("");
 
-  const [answerFile, setAnswerFile] = useState("");
-  const [questionFile, setQuestionFile] = useState("");
+  const [tcFile, setTcFile] = useState("");
+  const [aadharFile, setAadharFile] = useState("");
+  const [image, setImage] = useState();
 
-  const [imgUrl, setImgUrl] = useState(null);
-  const [progresspercent, setProgresspercent] = useState(0);
+  const [imgUrl, setImgUrl] = useState(`url("https://picsum.photos/200")`);
+  const [percent, setPercent] = useState();
 
-  const handleUpload = (e, data, aName1) => {
-    e.preventDefault();
-    const file = data;
+  const [currentSession, setCureentSession] = useState();
+  const [curUser, setCurUser] = useState();
+  const [classList, setClassList] = useState([]);
+  const [sectionList, setSectionList] = useState([]);
+  const [stor, setStor] = useState("");
 
-    if (!file) return alert("upload");
+  useEffect(() => {
+    getCurrentSession();
+    GetClassList();
+    GetSectionList();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const currentUser = user.displayName;
+        setCurUser(currentUser);
+        setStor(`${currentSession}/${currentUser}/file.jpg`);
+        // ...
+      } else {
+        // User is signed out
+        // ...
+      }
+    });
+  }, [currentSession, auth, classList, className]);
 
+  const getCurrentSession = async () => {
+    const docref = doc(db, "users", `${curUser}`);
+    const docSnap = await getDoc(docref);
+    var fetchedSession;
+    if (docSnap.exists) {
+      try {
+        fetchedSession = docSnap.data().current_Session;
+      } catch (e) {}
+    }
+    setCureentSession(fetchedSession);
+  };
+
+  const GetClassList = async () => {
+    const docRef = collection(
+      db,
+      `users/${curUser}/sessions/${currentSession}/classes`
+    );
+    const docSnap = await getDocs(docRef);
+    var list = [];
+    docSnap.forEach((doc) => {
+      list.push(doc.data());
+    });
+    setClassList(list);
+  };
+
+  const GetSectionList = async () => {
+    try {
+      const docRef = collection(
+        db,
+        `users/${curUser}/sessions/${currentSession}/classes/${className}/sections`
+      );
+      const docSnap = await getDocs(docRef);
+      var list = [];
+      docSnap.forEach((doc) => {
+        list.push(doc.data());
+      });
+      setSectionList(list);
+    } catch {
+      (e) => {
+        if (!className) {
+          alert("select class first");
+        }
+      };
+    }
+  };
+
+  const handleUpload = (img) => {
     const storageRef = ref(
       storage,
-      `${auth.currentUser.displayName}'_'${aName1}/${file.name}`
+      `${curUser}/${currentSession}/${className}/${sectionName}/${name}.jpg`
     );
+    const file = img;
     const uploadTask = uploadBytesResumable(storageRef, file);
-
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        const progress = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        );
-        setProgresspercent(progress);
+        // Observe state change events such as progress, pause, and resume
+        // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setPercent(progress);
       },
       (error) => {
-        alert(error);
+        // Handle unsuccessful uploads
       },
       () => {
-        alert("Uploaded SuccessFully");
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setImgUrl(downloadURL);
+        });
       }
     );
   };
 
-  const addData = async (
-    names,
-    branchs,
-    aNames,
-    rolls,
-    cNames,
-    modes,
-    types,
-    deads,
-    discriptions,
-    answers
-  ) => {
-    try {
-      await setDoc(
-        doc(db, `users/${auth.currentUser.displayName}/assignments`, names),
-        {
-          name: names,
-          branch: branchs,
-          Assignment_Name: aNames,
-          roll_systemid: rolls,
-          course: cNames,
-          mode: modes,
-          type: types,
-          deadline: deads,
-          information: discriptions,
-          answer_avail: answers,
-        }
-      );
-      router.push("/home");
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
+  const handleUploadDoc = (docs, nam) => {
+    const storageRef = ref(
+      storage,
+      `${curUser}/${currentSession}/${className}/${sectionName}/${name}/${nam}.jpg`
+    );
+    const file = docs;
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        // Observe state change events such as progress, pause, and resume
+        // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setPercent(progress);
+      },
+      (error) => {
+        // Handle unsuccessful uploads
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setImgUrl(downloadURL);
+        });
+      }
+    );
   };
 
-  const getCurrentDate = (separator = "") => {
-    let newDate = new Date();
-    let date = newDate.getDate();
-    let month = newDate.getMonth() + 1;
-    let year = newDate.getFullYear();
-
-    return `${year}${separator}${
-      month < 10 ? `0${month}` : `${month}`
-    }${separator}${date}`;
+  const submitForm = async () => {
+    if (
+      !sr ||
+      !name ||
+      !fName ||
+      !mName ||
+      !dob ||
+      !mobile ||
+      !fmobile ||
+      !age ||
+      !address ||
+      !transportStatus ||
+      !busStopName ||
+      !busNumber ||
+      !category ||
+      !caste ||
+      !place ||
+      !city ||
+      !pincode ||
+      !gender ||
+      !lSchool ||
+      !lSchoolAdd ||
+      !lSchoolBoard ||
+      !lSchoolResult ||
+      !tcStatus ||
+      !aadharStatus
+    ) {
+      alert("some information is missing");
+    } else {
+      try {
+        await setDoc(
+          doc(db, `users/${curUser}/sessions/${currentSession}/classes/${className}/sections/${sectionName}/students`, name),
+          {
+            Sr_Number: sr,
+            name: name,
+            Father_Name: fName,
+            Mother_Name: mName,
+            Date_Of_Birth: dob,
+            Mobile_Number: mobile,
+            Father_Mobile_Number: fmobile,
+            Age: age,
+            Address: address,
+            Transport_Status: transportStatus,
+            BusStop_Name: busStopName,
+            Bus_Number: busNumber,
+            Category: category,
+            Caste: caste,
+            Place: place,
+            City: city,
+            PinCode: pincode,
+            Gender: gender,
+            Last_School: lSchool,
+            Last_School_Address: lSchoolAdd,
+            Last_School_Board: lSchoolBoard,
+            Last_School_Result: lSchoolResult,
+            Tc_Available: tcStatus,
+            Aadhar_Available: aadharStatus,
+          }
+        );
+        
+      } catch (e) {
+        console.error("Error adding document: ", e);
+      }
+    }
   };
 
   return (
@@ -109,6 +259,29 @@ export default function NewStudent() {
                 New Student Details
               </h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
+                <section class="flex items-center justify-center max-w-fit mx-auto pb-10">
+                  <input
+                    onChange={(e) => {
+                      setImage(e.target.files[0]);
+                    }}
+                    id="company"
+                    type="file"
+                    placeholder="1111"
+                  />
+                  {curUser && (
+                    <button
+                      onClick={() => {
+                        handleUpload(image);
+                      }}
+                      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+                    >
+                      Upload
+                    </button>
+                  )}
+                </section>
+                <div className="flex items-center justify-center max-w-fit mx-auto pb-10">
+                  <img className="w-52 h-52 rounded-full" src={imgUrl} />
+                </div>
                 <div class="-mx-3 md:flex mb-6">
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
                     <label
@@ -119,7 +292,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setName(e.target.value);
+                        setSr(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -136,7 +309,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setBranch(e.target.value);
+                        setName(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
@@ -155,7 +328,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setAName(e.target.value);
+                        setFName(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -172,7 +345,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setRoll(e.target.value);
+                        setMName(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
@@ -191,7 +364,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setAName(e.target.value);
+                        setDob(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -208,7 +381,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setRoll(e.target.value);
+                        setMobile(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
@@ -227,7 +400,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setAName(e.target.value);
+                        setFMobile(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -244,7 +417,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setRoll(e.target.value);
+                        setAge(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
@@ -264,7 +437,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setCName(e.target.value);
+                        setAddress(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -285,14 +458,15 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setMode(e.target.value);
+                          setClassName(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
                       >
                         <option>Please Select</option>
-                        <option>Online</option>
-                        <option>Offline</option>
+                        {classList.map((e) => {
+                          return <option>{e.Name}</option>;
+                        })}
                       </select>
                     </div>
                   </div>
@@ -307,15 +481,15 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setDead(e.target.value);
+                          setSectionName(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
                       >
                         <option>Please Select</option>
-                        <option>1 Day</option>
-                        <option>3 Days</option>
-                        <option>1 Week</option>
+                        {sectionList.map((e) => {
+                          return <option>{e.Name}</option>;
+                        })}
                       </select>
                     </div>
                   </div>
@@ -331,7 +505,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setMode(e.target.value);
+                          setTransportStatus(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
@@ -353,7 +527,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setDead(e.target.value);
+                          setBusStopName(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
@@ -375,7 +549,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setDead(e.target.value);
+                          setBusNumber(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
@@ -399,7 +573,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setCategory(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -416,7 +590,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setCaste(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -435,7 +609,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setPlace(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -452,7 +626,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setCity(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -471,7 +645,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setPincode(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -490,7 +664,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setDead(e.target.value);
+                          setGender(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
@@ -512,7 +686,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setLSchool(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -529,7 +703,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setLSchoolAdd(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -548,7 +722,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setLSchoolBoard(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -565,7 +739,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setLSchoolResult(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -586,7 +760,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setMode(e.target.value);
+                          setTcStatus(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
@@ -608,7 +782,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setDead(e.target.value);
+                          setRteStatus(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
@@ -628,7 +802,7 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setDiscription(e.target.value);
+                        setAdmissionDate(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
@@ -649,7 +823,7 @@ export default function NewStudent() {
                     <div>
                       <input
                         onChange={(e) => {
-                          setQuestionFile(e.target.files[0]);
+                          setTcFile(e.target.files[0]);
                         }}
                         type="file"
                         class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
@@ -657,7 +831,7 @@ export default function NewStudent() {
                       />
                       <button
                         onClick={(e) => {
-                          handleUpload(e, questionFile, name);
+                          handleUploadDoc(tcFile, "TC");
                         }}
                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                       >
@@ -675,7 +849,7 @@ export default function NewStudent() {
                     <div>
                       <select
                         onChange={(e) => {
-                          setAnswer(e.target.value);
+                          setAadharStatus(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="job-type"
@@ -695,7 +869,7 @@ export default function NewStudent() {
                     <div>
                       <input
                         onChange={(e) => {
-                          setAnswerFile(e.target.files[0]);
+                          setAadharFile(e.target.files[0]);
                         }}
                         type="file"
                         class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
@@ -703,7 +877,7 @@ export default function NewStudent() {
                       />
                       <button
                         onClick={(e) => {
-                          handleUpload(e, answerFile, name);
+                          handleUploadDoc(aadharFile, "Aadhar");
                         }}
                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                       >
@@ -719,7 +893,7 @@ export default function NewStudent() {
                   <div class="md:w-1/2 px-3">
                     {/* class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded" */}
                     <div>
-                      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full w-full  border border-gray-200  text-sm  pr-8 mb-3 hover:scale-105">
+                      <button onClick={()=>{submitForm()}} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full w-full  border border-gray-200  text-sm  pr-8 mb-3 hover:scale-105">
                         Submit
                       </button>
                     </div>

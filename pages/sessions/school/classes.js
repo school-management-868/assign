@@ -17,10 +17,10 @@ import { list } from "firebase/storage";
 
 export default function Classes() {
   const [currentSession, setCureentSession] = useState();
+  const [curUser, setCurUser] = useState()
   const [className, setClassName] = useState("");
   const [noSections, setNoSections] = useState("");
   const [classList, setClassList] = useState([])
-  const [curUser, setCurUser] = useState()
   useEffect(() => {
     getCurrentSession();
     GetClassList();
@@ -64,6 +64,7 @@ export default function Classes() {
         const docRef = `users/${curUser}/sessions/${currentSession}/classes/${nam}/sections`;
 
         await setDoc(doc(db, docRef, `Section-${i}`), {
+          Name: `Section-${i}`,
           Parent_Class: nam,
           Strength: 0,
         });
