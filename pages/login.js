@@ -5,11 +5,11 @@ import React, { useEffect, useState } from "react";
 import { auth } from "../firebase";
 
 export default function Login() {
-    const router = useRouter();
+  const router = useRouter();
   const [isActive, setIsActive] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-    const [user,setUser] = useState();
+  const [user, setUser] = useState();
   const handleClick = (event) => {
     // 👇️ toggle isActive state on click
     setIsActive((current) => !current);
@@ -21,7 +21,7 @@ export default function Login() {
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
-        setUser(user)
+        setUser(user);
         // ...
       })
       .catch((error) => {
@@ -31,22 +31,6 @@ export default function Login() {
         alert(errorMessage);
       });
   };
-
-  useEffect(() => {
-     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push("/home");
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        const uid = user.uid;
-        // ...
-      } else {
-        router.push("/login");
-        // User is signed out
-        // ...
-      }
-    });
-  }, [user]);
 
   return (
     <div>
@@ -93,7 +77,10 @@ export default function Login() {
                   <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
                 </svg>
               </div>
-              <button onClick={handlesignin} class="bg-[#002D74] rounded-xl text-white py-2 hover:scale-105 duration-300">
+              <button
+                onClick={handlesignin}
+                class="bg-[#002D74] rounded-xl text-white py-2 hover:scale-105 duration-300"
+              >
                 Login
               </button>
             </form>

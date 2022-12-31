@@ -31,8 +31,12 @@ const schoolTabs = [
     href: "/sessions/school/classes",
   },
   {
-    name: "Help Center",
-    href: "#",
+    name: "Bus Management",
+    href: "/sessions/school/buses",
+  },
+  {
+    name: "Stop Management",
+    href: "/sessions/school/stops",
   },
   
 ];

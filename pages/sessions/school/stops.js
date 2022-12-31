@@ -6,58 +6,65 @@ import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
 
-export default function Classes() {
+export default function Buses() {
   const a = useContext(UserContext);
 
-  const [className, setClassName] = useState("");
-  const [noSections, setNoSections] = useState("");
-  const [classList, setClassList] = useState([]);
+  const [stopName, setStopName] = useState("");
+  const [stopFee, setStopFee] = useState("");
+  const [stopBus, setStopBus] = useState("");
+  const [stopList, setStopList] = useState([]);
+  const [busList, setBusList] = useState([])
 
-  useEffect(() => {
-    GetClassList();
-  }, [classList]);
+  
 
-  const createSections = async (nam, num) => {
-    for (let i = 1; i <= num; i++) {
-      try {
-        const docRef = `users/${a.user}/sessions/${a.session}/classes/${nam}/sections`;
+    useEffect(() => {
+        GetStopList();
+        GetBusList();
+    }, [stopList]);
 
-        await setDoc(doc(db, docRef, `Section-${i}`), {
-          Name: `Section-${i}`,
-          Parent_Class: nam,
-          Strength: 0,
-        });
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
-    }
-  };
-
-  const createClass = async (name, sections) => {
+  const createStop = async (name, fee, bus) => {
     try {
-      const docRef = `users/${a.user}/sessions/${a.session}/classes`;
+      const docRef = `users/${a.user}/sessions/${a.session}/stops`;
       await setDoc(doc(db, docRef, `${name}`), {
-        Name: `${name}`,
-        No_Of_Sections: sections,
-      });
-      createSections(name, sections);
+        Stop_Name: name,
+        Stop_Fee: fee,
+        Stop_Bus: bus,
+      }).then(()=>{alert("success")});
     } catch (e) {
       console.error("Error adding document: ", e);
     }
   };
 
-  const GetClassList = async () => {
+  const GetBusList = async () => {
     const docRef = collection(
       db,
-      `users/${a.user}/sessions/${a.session}/classes`
+      `users/${a.user}/sessions/${a.session}/buses`
     );
     const docSnap = await getDocs(docRef);
     var list = [];
     docSnap.forEach((doc) => {
       list.push(doc.data());
     });
-    setClassList(list);
+    setBusList(list);
   };
+
+    const GetStopList = async () => {
+      const docRef = collection(
+        db,
+        `users/${a.user}/sessions/${a.session}/stops`
+      );
+      const docSnap = await getDocs(docRef);
+      var list = [];
+      docSnap.forEach((doc) => {
+        list.push(doc.data());
+      });
+      setStopList(list);
+      
+    };
+
+    
+    
+    
 
   return (
     <>
@@ -65,7 +72,7 @@ export default function Classes() {
         <div class="bg-gray-100 flex bg-local w-screen">
           <div class="bg-gray-100 mx-auto w-screen h-screen bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
-              <h1 className="text-center font-bold text-2xl">Add New Class</h1>
+              <h1 className="text-center font-bold text-2xl">Add New Stop</h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
                 <div class="-mx-3 md:flex mb-6">
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -73,11 +80,28 @@ export default function Classes() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="company"
                     >
-                      Name*
+                      Stop Name*
                     </label>
                     <input
                       onChange={(e) => {
-                        setClassName(e.target.value);
+                        setStopName(e.target.value);
+                      }}
+                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                      id="company"
+                      type="text"
+                      placeholder="Netboard"
+                    />
+                  </div>
+                  <div class="md:w-1/2 px-3 mb-6 md:mb-0">
+                    <label
+                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
+                      for="company"
+                    >
+                      Stop Fee*
+                    </label>
+                    <input
+                      onChange={(e) => {
+                        setStopFee(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -90,21 +114,24 @@ export default function Classes() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="title"
                     >
-                      No. Of Sections*
+                      Stop Bus*
                     </label>
-                    <input
+                    <select
                       onChange={(e) => {
-                        setNoSections(e.target.value);
+                        setStopBus(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
                       type="text"
                       placeholder="B.tech / cse / CSP242 "
-                    />
+                    >
+                        <option>please select</option>
+                        {busList.map((e)=>{return(<option>{e.Bus_Number}</option>)})}
+                    </select>
                   </div>
                   <button
                     onClick={() => {
-                      createClass(className, noSections);
+                      createStop(stopName, stopFee, stopBus);
                     }}
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   >
@@ -119,24 +146,22 @@ export default function Classes() {
                 <thead class="block md:table-header-group">
                   <tr class="border border-grey-500 md:border-none block md:table-row absolute -top-full md:top-auto -left-full md:left-auto  md:relative ">
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Classs Name
+                      Stop Number
                     </th>
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Sections
+                      Stop Bus
                     </th>
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Class Teacher
+                      Stop Fee
                     </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Strength
-                    </th>
+
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody class="block md:table-row-group">
-                  {classList.map((e, index) => {
+                  {stopList.map((e, index) => {
                     return (
                       <tr
                         key={index}
@@ -144,28 +169,23 @@ export default function Classes() {
                       >
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            Name
+                            name
                           </span>
-                          {e.Name}
+                          {e.Stop_Name}
                         </td>
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            sections
+                            bus
                           </span>
-                          {e.No_Of_Sections}
+                          {e.Stop_Bus}
                         </td>
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            Email Address
+                            fee
                           </span>
-                          jrios@icloud.com
+                          {e.Stop_Fee}
                         </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            Mobile
-                          </span>
-                          582-3X2-6233
-                        </td>
+
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
                             Actions

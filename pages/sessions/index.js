@@ -1,101 +1,67 @@
-import React, { use, useEffect, useState } from "react";
-import Nav from "../../components/navbar";
-import Header from "../../components/dropdown";
+import React, { useContext, useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
-import { async } from "@firebase/util";
-import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
+import { updateProfile } from "firebase/auth";
+import UserContext from "../context/userContext";
 
 export default function index() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [sessionList, setSessionList] = useState([])
-  const [sessionSelected,setSessionSelected] = useState()
-  const [curUser, setCurUser] = useState();
-
+  const [sessionList, setSessionList] = useState([]);
+  const [sessionSelected, setSessionSelected] = useState();
+  const a = useContext(UserContext);
 
   const GetSessionList = async () => {
-    const docRef = collection(db, `users/${curUser}/sessions`);
+    const docRef = collection(db, `users/${a.user}/sessions`);
     const docSnap = await getDocs(docRef);
-    var list = []
-    docSnap.forEach((doc)=>{
-      list.push(doc.data())
-    })
+    var list = [];
+    docSnap.forEach((doc) => {
+      list.push(doc.data());
+    });
     setSessionList(list);
   };
 
   useEffect(() => {
-    GetSessionList()
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        const currentUser = user.displayName;
-        setCurUser(currentUser)
-        // ...
-      } else {
-        // User is signed out
-        // ...
-      }
-    });
-   
-  }, [auth,sessionList])
-  
-const setCurrentSession= async(value)=>{
-  const ref = doc(db, "users", `${curUser}`);
+    GetSessionList();
+  }, [sessionList]);
 
-  // Set the "capital" field of the city 'DC'
-  if(value){
-    await updateDoc(ref, {
-    
-    current_Session: value,
-  });
-  alert("SuccessFull")
-}
-else{
-  alert("plese select session")
-}
-}
-
-const getCurrentSession = async()=>{
-  const docref = doc(db,"users",`${curUser}`)
-  const docSnap = await getDoc(docref);
-  var fetchedSession;
-  if(docSnap.exists){
-    fetchedSession = docSnap.data().current_Session
-  }
-}
+  const setCurrentSession = async (value) => {
+    updateProfile(auth.currentUser, {
+      photoURL: value,
+    })
+      .then(() => {
+        // Profile updated!
+        // ...
+        alert("success");
+      })
+      .catch((error) => {
+        // An error occurred
+        // ...
+      });
+  };
 
   const createSession = async (fromdate, todate) => {
     try {
       await setDoc(
-        doc(
-          db,
-          `users/${auth.currentUser.displayName}/sessions`,
-          `${fromdate}-${todate}`
-        ),
+        doc(db, `users/${a.user}/sessions`, `${fromdate}-${todate}`),
         {
           Name: `${fromdate}-${todate}`,
           From: fromdate,
           To: todate,
         }
-      );
-      
+      ).then(setCurrentSession(`${fromdate}-${todate}`));
     } catch (e) {
       console.error("Error adding document: ", e);
     }
   };
 
-
-
-
-
-
   return (
     <>
-      <Nav />
-      <Header />
-      
       <div className="w-screen">
         <div class="bg-gray-100 flex bg-local w-screen">
           <div class="bg-gray-100 mx-auto w-screen h-screen bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
@@ -164,7 +130,7 @@ const getCurrentSession = async()=>{
                       Mode*
                     </label>
                     <div>
-                      <select 
+                      <select
                         onChange={(e) => {
                           setSessionSelected(e.target.value);
                         }}
@@ -172,15 +138,21 @@ const getCurrentSession = async()=>{
                         id="location"
                       >
                         <option>Select_Session</option>
-                        {sessionList.map((e,index)=>{return(<option key={index}>{e.Name}</option>)})}
+                        {sessionList.map((e, index) => {
+                          return <option key={index}>{e.Name}</option>;
+                        })}
                       </select>
                     </div>
                   </div>
 
-                  <button onClick={()=>{setCurrentSession(sessionSelected)}} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
+                  <button
+                    onClick={() => {
+                      setCurrentSession(sessionSelected);
+                    }}
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+                  >
                     Add
                   </button>
-                  
                 </div>
               </div>
             </div>

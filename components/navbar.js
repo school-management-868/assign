@@ -5,15 +5,17 @@ import { useState } from "react";
 import { auth } from "../firebase";
 
 export default function Nav() {
-    const router = useRouter();
-  const signout =()=>{
-    signOut(auth).then(() => {
-      router.push("/")
-      // Sign-out successful.
-    }).catch((error) => {
-      // An error happened.
-    });
-  }
+  const router = useRouter();
+  const signout = () => {
+    signOut(auth)
+      .then(() => {
+        router.push("/");
+        // Sign-out successful.
+      })
+      .catch((error) => {
+        // An error happened.
+      });
+  };
   const [navbar, setNavbar] = useState(false);
 
   return (
@@ -22,7 +24,9 @@ export default function Nav() {
         <div>
           <div className="flex items-center justify-between py-3 md:py-5 md:block">
             <a href="javascript:void(0)">
-              <h2 className="text-2xl font-bold text-white">M J PUBLIC SCHOOL</h2>
+              <h2 className="text-2xl font-bold text-white">
+                M J PUBLIC SCHOOL
+              </h2>
             </a>
             <div className="md:hidden">
               <button
@@ -78,26 +82,25 @@ export default function Nav() {
               <li className="text-white hover:text-indigo-200">
                 <Link href="/communication">Contact</Link>
               </li>
-              
             </ul>
 
             <div className="mt-3 space-y-2 lg:hidden md:inline-block">
-              <a onClick={signout}
+              <a
+                onClick={signout}
                 className="inline-block w-full px-4 py-2 text-center text-white bg-gray-600 rounded-md shadow hover:bg-gray-800 cursor-pointer"
               >
                 Log Out
               </a>
-              
             </div>
           </div>
         </div>
         <div className="hidden space-x-2 md:inline-block">
-          <a onClick={signout}
+          <a
+            onClick={signout}
             className="px-4 py-2 text-white bg-gray-600 rounded-md shadow hover:bg-gray-800 cursor-pointer"
           >
-            Log Out 
+            Log Out
           </a>
-          
         </div>
       </div>
     </nav>
