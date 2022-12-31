@@ -11,25 +11,11 @@ import {
   getDocs,
 } from "firebase/firestore";
 import Header from "../components/dropdown";
-
+import { async } from "@firebase/util";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function home() {
-  const [users, setUsers] = useState([]);
-  const print = async () => {
-    const docRef = doc(db, "users", "Akash Gandhar");
-    const docSnap = await getDoc(docRef);
-    const q = query(
-      collection(db, `users/${auth.currentUser.displayName}/assignments`)
-    );
-
-    const querySnapshot = await getDocs(q);
-    var list1 = [];
-    querySnapshot.forEach((doc) => {
-      // doc.data() is never undefined for query doc snapshots
-      list1.push(doc.data());
-    });
-    setUsers(list1);
-  };
+  
 
   return (
     <>
@@ -38,3 +24,7 @@ export default function home() {
     </>
   );
 }
+
+
+
+
