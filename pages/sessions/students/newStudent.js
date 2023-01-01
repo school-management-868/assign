@@ -280,6 +280,8 @@ export default function NewStudent() {
             ),
             {
               Sr_Number: sr,
+              Class:className,
+              Section:sectionName,
               name: name,
               Father_Name: fName,
               Mother_Name: mName,
@@ -337,6 +339,49 @@ export default function NewStudent() {
                 // doc.data() will be undefined in this case
                 console.log("No such document!");
               }
+            })
+            .then(async()=>{
+              await setDoc(
+                doc(
+                  db,
+                  `users/${a.user}/sessions/${a.session}/AllStudents`,
+                  sr
+                ),
+                {
+                  Sr_Number: sr,
+                  Class:className,
+                  Section:sectionName,
+                  name: name,
+                  Father_Name: fName,
+                  Mother_Name: mName,
+                  Date_Of_Birth: dob,
+                  Mobile_Number: mobile,
+                  Father_Mobile_Number: fmobile,
+                  Age: age,
+                  Address: address,
+                  Transport_Status: transportStatus,
+                  BusStop_Name: busStopName,
+                  Category: category,
+                  Caste: caste,
+                  Place: place,
+                  City: city,
+                  PinCode: pincode,
+                  Gender: gender,
+                  Last_School: lSchool,
+                  Last_School_Address: lSchoolAdd,
+                  Last_School_Board: lSchoolBoard,
+                  Last_School_Result: lSchoolResult,
+                  RTE_Status: rteStatus,
+                  Admission_Date: admissionDate,
+                  Tc_Available: tcStatus,
+                  Aadhar_Available: aadharStatus,
+                  House: house,
+                  Image: imgUrl,
+                  TC: tcUrl,
+                  Aadhar: aadharUrl,
+                  created: Timestamp.now(),
+                }
+              )
             })
             .then(() => {
               alert("student regestered successfully");
