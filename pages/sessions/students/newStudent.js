@@ -1,10 +1,14 @@
 import {
+  FieldValue,
   Timestamp,
   collection,
   doc,
   getDoc,
   getDocs,
+  query,
   setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
@@ -14,48 +18,54 @@ import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { auth, db, storage } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
+import { async } from "@firebase/util";
 
 export default function NewStudent() {
   const router = useRouter();
-  const [sr, setSr] = useState("NaN");
-  const [name, setName] = useState("NaN");
-  const [fName, setFName] = useState("NaN");
-  const [mName, setMName] = useState("NaN");
-  const [dob, setDob] = useState("NaN");
-  const [mobile, setMobile] = useState("NaN");
-  const [fmobile, setFMobile] = useState("NaN");
-  const [age, setAge] = useState("NaN");
-  const [address, setAddress] = useState("NaN");
-  const [className, setClassName] = useState("NaN");
-  const [sectionName, setSectionName] = useState("NaN");
-  const [transportStatus, setTransportStatus] = useState("NaN");
+  const [sr, setSr] = useState("");
+  const [name, setName] = useState("");
+  const [fName, setFName] = useState("");
+  const [mName, setMName] = useState("");
+  const [dob, setDob] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [fmobile, setFMobile] = useState("");
+  const [age, setAge] = useState("");
+  const [address, setAddress] = useState("");
+  const [className, setClassName] = useState("");
+  const [sectionName, setSectionName] = useState("");
+  const [transportStatus, setTransportStatus] = useState("");
   const [busStopName, setBusStopName] = useState("NaN");
-  const [busNumber, setBusNumber] = useState("NaN");
-  const [category, setCategory] = useState("NaN");
-  const [caste, setCaste] = useState("NaN");
-  const [place, setPlace] = useState("NaN");
-  const [city, setCity] = useState("NaN");
-  const [pincode, setPincode] = useState("NaN");
-  const [gender, setGender] = useState("NaN");
-  const [lSchool, setLSchool] = useState("NaN");
-  const [lSchoolAdd, setLSchoolAdd] = useState("NaN");
-  const [lSchoolBoard, setLSchoolBoard] = useState("NaN");
-  const [lSchoolResult, setLSchoolResult] = useState("NaN");
-  const [tcStatus, setTcStatus] = useState("NaN");
-  const [rteStatus, setRteStatus] = useState("NaN");
-  const [admissionDate, setAdmissionDate] = useState("NaN");
-  const [aadharStatus, setAadharStatus] = useState("NaN");
+  // const [busNumber, setBusNumber] = useState("NaN");
+  const [category, setCategory] = useState("");
+  const [caste, setCaste] = useState("");
+  const [place, setPlace] = useState("");
+  const [city, setCity] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [gender, setGender] = useState("");
+  const [lSchool, setLSchool] = useState("");
+  const [lSchoolAdd, setLSchoolAdd] = useState("");
+  const [lSchoolBoard, setLSchoolBoard] = useState("");
+  const [lSchoolResult, setLSchoolResult] = useState("");
+  const [tcStatus, setTcStatus] = useState("");
+  const [rteStatus, setRteStatus] = useState("");
+  const [admissionDate, setAdmissionDate] = useState("");
+  const [aadharStatus, setAadharStatus] = useState("");
+  const [house, setHouse] = useState();
 
-  const [tcFile, setTcFile] = useState("");
-  const [aadharFile, setAadharFile] = useState("");
-  const [image, setImage] = useState();
+  const [tcFile, setTcFile] = useState("nil");
+  const [aadharFile, setAadharFile] = useState("nil");
+  const [image, setImage] = useState("nil");
 
-  const [imgUrl, setImgUrl] = useState("https://st3.depositphotos.com/13159112/17145/v/450/depositphotos_171453724-stock-illustration-default-avatar-profile-icon-grey.jpg");
+  const [imgUrl, setImgUrl] = useState(
+    "https://st3.depositphotos.com/13159112/17145/v/450/depositphotos_171453724-stock-illustration-default-avatar-profile-icon-grey.jpg"
+  );
+  const [tcUrl, setTcUrl] = useState();
+  const [aadharUrl, setAadharUrl] = useState();
 
   const [classList, setClassList] = useState([]);
   const [sectionList, setSectionList] = useState([]);
   const [stopList, setStopList] = useState([]);
-  const [busList, setBusList] = useState([]);
+  const [houseList, setHouseList] = useState([]);
 
   const a = useContext(UserContext);
 
@@ -97,17 +107,17 @@ export default function NewStudent() {
     }
   };
 
-  const GetBusList = async () => {
+  const GetHouseList = async () => {
     const docRef = collection(
       db,
-      `users/${a.user}/sessions/${a.session}/buses`
+      `users/${a.user}/sessions/${a.session}/houses`
     );
     const docSnap = await getDocs(docRef);
     var list = [];
     docSnap.forEach((doc) => {
       list.push(doc.data());
     });
-    setBusList(list);
+    setHouseList(list);
   };
 
   const GetStopList = async () => {
@@ -155,10 +165,10 @@ export default function NewStudent() {
     }
   };
 
-  const handleUploadDoc = (docs, nam) => {
+  const handleUploadTc = (docs) => {
     const storageRef = ref(
       storage,
-      `${a.user}/${a.session}/${className}/${sectionName}/${name}/${nam}.jpg`
+      `${a.user}/${a.session}/${className}/${sectionName}/${name}/TC.jpg`
     );
     const file = docs;
     const uploadTask = uploadBytesResumable(storageRef, file);
@@ -175,9 +185,41 @@ export default function NewStudent() {
       },
       () => {
         alert("uploaded");
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setTcUrl(downloadURL);
+        });
       }
     );
   };
+
+  const handleUploadAadhar = (docs) => {
+    const storageRef = ref(
+      storage,
+      `${a.user}/${a.session}/${className}/${sectionName}/${name}/Aadhar.jpg`
+    );
+    const file = docs;
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        // Observe state change events such as progress, pause, and resume
+        // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      },
+      (error) => {
+        // Handle unsuccessful uploads
+      },
+      () => {
+        alert("uploaded");
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setAadharUrl(downloadURL);
+        });
+      }
+    );
+  };
+
+  
 
   const submitForm = async () => {
     if (
@@ -192,7 +234,6 @@ export default function NewStudent() {
       !address ||
       !transportStatus ||
       !busStopName ||
-      !busNumber ||
       !category ||
       !caste ||
       !place ||
@@ -204,54 +245,121 @@ export default function NewStudent() {
       !lSchoolBoard ||
       !lSchoolResult ||
       !tcStatus ||
-      !aadharStatus
+      !aadharStatus ||
+      !className ||
+      !sectionName ||
+      !house
     ) {
       alert("some information is missing");
     } else {
+      var oldSr = [];
       try {
-        await setDoc(
-          doc(
+        const q = query(
+          collection(
             db,
-            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`,
-            name
+            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`
           ),
-          {
-            Sr_Number: sr,
-            name: name,
-            Father_Name: fName,
-            Mother_Name: mName,
-            Date_Of_Birth: dob,
-            Mobile_Number: mobile,
-            Father_Mobile_Number: fmobile,
-            Age: age,
-            Address: address,
-            Transport_Status: transportStatus,
-            BusStop_Name: busStopName,
-            Bus_Number: busNumber,
-            Category: category,
-            Caste: caste,
-            Place: place,
-            City: city,
-            PinCode: pincode,
-            Gender: gender,
-            Last_School: lSchool,
-            Last_School_Address: lSchoolAdd,
-            Last_School_Board: lSchoolBoard,
-            Last_School_Result: lSchoolResult,
-            RTE_Status: rteStatus,
-            Admission_Date: admissionDate,
-            Tc_Available: tcStatus,
-            Aadhar_Available: aadharStatus,
-            created: Timestamp.now(),
-          }
-        ).then(() => {
-          alert("student regestered successfully");
-          router.reload();
+          where("Sr_Number", "==", sr)
+        );
+
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          oldSr.push(doc.data().Sr_Number);
         });
-      } catch (e) {
-        console.error("Error adding document: ", e);
+      } catch {}
+
+      if (oldSr.length >= 1) {
+        alert("sr already exist");
+      } else {
+        try {
+          await setDoc(
+            doc(
+              db,
+              `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`,
+              sr
+            ),
+            {
+              Sr_Number: sr,
+              name: name,
+              Father_Name: fName,
+              Mother_Name: mName,
+              Date_Of_Birth: dob,
+              Mobile_Number: mobile,
+              Father_Mobile_Number: fmobile,
+              Age: age,
+              Address: address,
+              Transport_Status: transportStatus,
+              BusStop_Name: busStopName,
+              Category: category,
+              Caste: caste,
+              Place: place,
+              City: city,
+              PinCode: pincode,
+              Gender: gender,
+              Last_School: lSchool,
+              Last_School_Address: lSchoolAdd,
+              Last_School_Board: lSchoolBoard,
+              Last_School_Result: lSchoolResult,
+              RTE_Status: rteStatus,
+              Admission_Date: admissionDate,
+              Tc_Available: tcStatus,
+              Aadhar_Available: aadharStatus,
+              House: house,
+              Image: imgUrl,
+              TC: tcUrl,
+              Aadhar: aadharUrl,
+              created: Timestamp.now(),
+            }
+          )
+            .then(async () => {
+              const sessionRef = doc(
+                db,
+                `users/${a.user}/sessions/${a.session}/classes/${className}/sections/`,
+                sectionName
+              );
+              const classRef = doc(
+                db,
+                `users/${a.user}/sessions/${a.session}/classes/`,
+                className
+              );
+
+              const sesSnap = await getDoc(sessionRef);
+              const classSnap = await getDoc(classRef);
+
+              if (sesSnap.exists() && classSnap.exists()) {
+                await updateDoc(classRef, {
+                  Strength: classSnap.data().Strength + 1,
+                });
+                await updateDoc(sessionRef, {
+                  Strength: sesSnap.data().Strength + 1,
+                });
+              } else {
+                // doc.data() will be undefined in this case
+                console.log("No such document!");
+              }
+            })
+            .then(() => {
+              alert("student regestered successfully");
+              router.reload();
+            });
+        } catch (e) {
+          console.error("Error adding document: ", e);
+        }
       }
     }
+  };
+
+  const update = async () => {
+    const classRef = doc(
+      db,
+      `users/${a.user}/sessions/${a.session}/classes/`,
+      className
+    );
+    const sessionRef = doc(
+      db,
+      `users/${a.user}/sessions/${a.session}/classes/${className}/sections/`,
+      sectionName
+    );
   };
 
   return (
@@ -514,7 +622,7 @@ export default function NewStudent() {
                       <select
                         onChange={(e) => {
                           setTransportStatus(e.target.value);
-                          GetStopList()
+                          GetStopList();
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
@@ -534,16 +642,43 @@ export default function NewStudent() {
                       Bus Stop Name
                     </label>
                     <div>
-                      {transportStatus.valueOf() == "Yes" && <select
-                        onChange={(e) => {
-                          setBusStopName(e.target.value);
-                        }}
-                        class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
-                        id="department"
-                      >
-                        <option>Please Select</option>
-                        {stopList.map((e)=>{return(<option>{e.Stop_Name}</option>)})}
-                      </select>}
+                      {transportStatus.valueOf() == "Yes" && (
+                        <select
+                          onChange={(e) => {
+                            setBusStopName(e.target.value);
+                          }}
+                          class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
+                          id="department"
+                        >
+                          <option>Please Select</option>
+                          {stopList.map((e) => {
+                            return <option>{e.Stop_Name}</option>;
+                          })}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                  <div class="md:w-1/2 px-3">
+                    <label
+                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
+                      for="department"
+                    >
+                      Select House
+                    </label>
+                    <div>
+                      
+                        <select onClick={()=>{GetHouseList()}}
+                          onChange={(e) => {
+                            setHouse(e.target.value);
+                          }}
+                          class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
+                          id="department"
+                        >
+                          <option>Please Select</option>
+                          {houseList.map((e) => {
+                            return <option>{e.Name}</option>;
+                          })}
+                        </select>
                     </div>
                   </div>
                 </div>
@@ -806,20 +941,26 @@ export default function NewStudent() {
                       Upload TC*
                     </label>
                     <div>
-                      {tcStatus.valueOf() == "Yes" && <><input
-                        onChange={(e) => {
-                          setTcFile(e.target.files[0]);
-                        } }
-                        type="file"
-                        class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
-                        id="location" /><button
-                          onClick={(e) => {
-                            handleUploadDoc(tcFile, "TC");
-                          } }
-                          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
-                        >
-                          Upload
-                        </button></>}
+                      {tcStatus.valueOf() == "Yes" && (
+                        <>
+                          <input
+                            onChange={(e) => {
+                              setTcFile(e.target.files[0]);
+                            }}
+                            type="file"
+                            class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
+                            id="location"
+                          />
+                          <button
+                            onClick={(e) => {
+                              handleUploadTc(tcFile);
+                            }}
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+                          >
+                            Upload
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div class="md:w-1/2 px-3">
@@ -851,20 +992,26 @@ export default function NewStudent() {
                       Upload Aadhar*
                     </label>
                     <div>
-                      {aadharStatus.valueOf() == "Yes" && <><input
-                        onChange={(e) => {
-                          setAadharFile(e.target.files[0]);
-                        } }
-                        type="file"
-                        class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
-                        id="location" /><button
-                          onClick={(e) => {
-                            handleUploadDoc(aadharFile, "Aadhar");
-                          } }
-                          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
-                        >
-                          Upload
-                        </button></>}
+                      {aadharStatus.valueOf() == "Yes" && (
+                        <>
+                          <input
+                            onChange={(e) => {
+                              setAadharFile(e.target.files[0]);
+                            }}
+                            type="file"
+                            class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
+                            id="location"
+                          />
+                          <button
+                            onClick={(e) => {
+                              handleUploadAadhar(aadharFile);
+                            }}
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+                          >
+                            Upload
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

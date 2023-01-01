@@ -7,15 +7,11 @@ import Header from "../../components/dropdown";
 import { useRouter } from "next/router";
 
 const UserState = (props) => {
-  const [user, setUser] = useState();
+  const [user, setUser] = useState(null);
   const [session, setSession] = useState();
   const router = useRouter();
 
   useEffect(() => {
-    if(user){
-      router.push("/home");
-
-    }
     onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user.displayName);
@@ -25,6 +21,7 @@ const UserState = (props) => {
         router.push("/login");
       }
     });
+    
   }, [auth]);
 
   

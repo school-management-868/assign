@@ -9,7 +9,8 @@ export default function Nav() {
   const signout = () => {
     signOut(auth)
       .then(() => {
-        router.push("/");
+        router.push("/login");
+        router.reload();
         // Sign-out successful.
       })
       .catch((error) => {

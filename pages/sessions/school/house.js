@@ -6,65 +6,41 @@ import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
 
-export default function Classes() {
+export default function Buses() {
   const a = useContext(UserContext);
 
-  const [className, setClassName] = useState("");
-  const [noSections, setNoSections] = useState("");
-  const [classFee, setClassFee] = useState("");
-  const [classList, setClassList] = useState([]);
+  const [houseName, setHouseName] = useState("");
+  const [colour, setColour] = useState("");
+  const [houseList, setHouseList] = useState([]);
 
-  useEffect(() => {
-    GetClassList();
-  }, [classList]);
+    useEffect(() => {
+        GetHouseList();
+    }, [houseList]);
 
-  const createSections = async (nam, num) => {
-    for (let i = 1; i <= num; i++) {
-      try {
-        const docRef = `users/${a.user}/sessions/${a.session}/classes/${nam}/sections`;
-
-        await setDoc(doc(db, docRef, `Section-${i}`), {
-          Name: `Section-${i}`,
-          Parent_Class: nam,
-          Strength: 0,
-        });
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
+  const createHouse = async () => {
+    try {
+      const docRef = `users/${a.user}/sessions/${a.session}/houses`;
+      await setDoc(doc(db, docRef, `${houseName}`), {
+        Name: houseName,
+        Colour: colour,
+      }).then(()=>{alert("success")});
+    } catch (e) {
+      console.error("Error adding document: ", e);
     }
   };
 
-  const createClass = async () => {
-    if (!className || !classFee || !noSections) {
-      alert("Enter Missing Details")
-    } else {
-      try {
-        const docRef = `users/${a.user}/sessions/${a.session}/classes`;
-        await setDoc(doc(db, docRef, className), {
-          Name: className,
-          No_Of_Sections: noSections,
-          Class_Fee: classFee,
-          Strength:0
-        });
-        createSections(className, noSections);
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
-    }
-  };
-
-  const GetClassList = async () => {
-    const docRef = collection(
-      db,
-      `users/${a.user}/sessions/${a.session}/classes`
-    );
-    const docSnap = await getDocs(docRef);
-    var list = [];
-    docSnap.forEach((doc) => {
-      list.push(doc.data());
-    });
-    setClassList(list);
-  };
+    const GetHouseList = async () => {
+      const docRef = collection(
+        db,
+        `users/${a.user}/sessions/${a.session}/houses`
+      );
+      const docSnap = await getDocs(docRef);
+      var list = [];
+      docSnap.forEach((doc) => {
+        list.push(doc.data());
+      });
+      setHouseList(list);
+    };
 
   return (
     <>
@@ -72,7 +48,7 @@ export default function Classes() {
         <div class="bg-gray-100 flex bg-local w-screen">
           <div class="bg-gray-100 mx-auto w-screen h-screen bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
-              <h1 className="text-center font-bold text-2xl">Add New Class</h1>
+              <h1 className="text-center font-bold text-2xl">Add New House</h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
                 <div class="-mx-3 md:flex mb-6">
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -84,7 +60,7 @@ export default function Classes() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setClassName(e.target.value);
+                        setHouseName(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -97,38 +73,21 @@ export default function Classes() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="title"
                     >
-                      No. Of Sections*
+                      House Colour*
                     </label>
                     <input
                       onChange={(e) => {
-                        setNoSections(e.target.value);
+                        setColour(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
-                      type="number"
-                      placeholder="B.tech / cse / CSP242 "
-                    />
-                  </div>
-                  <div class="md:w-1/2 px-3">
-                    <label
-                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="title"
-                    >
-                      Class Fee*
-                    </label>
-                    <input
-                      onChange={(e) => {
-                        setClassFee(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="title"
-                      type="number"
+                      type="text"
                       placeholder="B.tech / cse / CSP242 "
                     />
                   </div>
                   <button
                     onClick={() => {
-                      createClass();
+                      createHouse();
                     }}
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   >
@@ -143,24 +102,19 @@ export default function Classes() {
                 <thead class="block md:table-header-group">
                   <tr class="border border-grey-500 md:border-none block md:table-row absolute -top-full md:top-auto -left-full md:left-auto  md:relative ">
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Classs Name
+                      House Name
                     </th>
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Sections
+                      House Colour
                     </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Class Teacher
-                    </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Strength
-                    </th>
+
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody class="block md:table-row-group">
-                  {classList.map((e, index) => {
+                  {houseList.map((e, index) => {
                     return (
                       <tr
                         key={index}
@@ -168,28 +122,17 @@ export default function Classes() {
                       >
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            Name
+                            name
                           </span>
                           {e.Name}
                         </td>
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            sections
+                            colour
                           </span>
-                          {e.No_Of_Sections}
+                          {e.Colour }
                         </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            classTeacher
-                          </span>
-                          {e.classTeacher}
-                        </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            Strength
-                          </span>
-                          {e.Strength}
-                        </td>
+
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
                             Actions

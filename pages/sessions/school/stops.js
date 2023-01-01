@@ -13,25 +13,29 @@ export default function Buses() {
   const [stopFee, setStopFee] = useState("");
   const [stopBus, setStopBus] = useState("");
   const [stopList, setStopList] = useState([]);
-  const [busList, setBusList] = useState([])
+  const [busList, setBusList] = useState([]);
 
-  
-
-    useEffect(() => {
-        GetStopList();
-        GetBusList();
-    }, [stopList]);
+  useEffect(() => {
+    GetStopList();
+    GetBusList();
+  }, [stopList]);
 
   const createStop = async (name, fee, bus) => {
-    try {
-      const docRef = `users/${a.user}/sessions/${a.session}/stops`;
-      await setDoc(doc(db, docRef, `${name}`), {
-        Stop_Name: name,
-        Stop_Fee: fee,
-        Stop_Bus: bus,
-      }).then(()=>{alert("success")});
-    } catch (e) {
-      console.error("Error adding document: ", e);
+    if (!name || !fee || !bus) {
+      alert("Enter Missing Details");
+    } else {
+      try {
+        const docRef = `users/${a.user}/sessions/${a.session}/stops`;
+        await setDoc(doc(db, docRef, `${name}`), {
+          Stop_Name: name,
+          Stop_Fee: fee,
+          Stop_Bus: bus,
+        }).then(() => {
+          alert("success");
+        });
+      } catch (e) {
+        console.error("Error adding document: ", e);
+      }
     }
   };
 
@@ -48,23 +52,18 @@ export default function Buses() {
     setBusList(list);
   };
 
-    const GetStopList = async () => {
-      const docRef = collection(
-        db,
-        `users/${a.user}/sessions/${a.session}/stops`
-      );
-      const docSnap = await getDocs(docRef);
-      var list = [];
-      docSnap.forEach((doc) => {
-        list.push(doc.data());
-      });
-      setStopList(list);
-      
-    };
-
-    
-    
-    
+  const GetStopList = async () => {
+    const docRef = collection(
+      db,
+      `users/${a.user}/sessions/${a.session}/stops`
+    );
+    const docSnap = await getDocs(docRef);
+    var list = [];
+    docSnap.forEach((doc) => {
+      list.push(doc.data());
+    });
+    setStopList(list);
+  };
 
   return (
     <>
@@ -105,7 +104,7 @@ export default function Buses() {
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
-                      type="text"
+                      type="number"
                       placeholder="Netboard"
                     />
                   </div>
@@ -125,8 +124,10 @@ export default function Buses() {
                       type="text"
                       placeholder="B.tech / cse / CSP242 "
                     >
-                        <option>please select</option>
-                        {busList.map((e)=>{return(<option>{e.Bus_Number}</option>)})}
+                      <option>please select</option>
+                      {busList.map((e) => {
+                        return <option>{e.Bus_Number}</option>;
+                      })}
                     </select>
                   </div>
                   <button

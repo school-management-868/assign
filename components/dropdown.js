@@ -38,6 +38,14 @@ const schoolTabs = [
     name: "Stop Management",
     href: "/sessions/school/stops",
   },
+  {
+    name: "House Management",
+    href: "/sessions/school/house",
+  },
+  {
+    name: "Staff Management",
+    href: "/sessions/school/staff",
+  },
   
 ];
 
@@ -48,8 +56,8 @@ const studentTabs = [
     href: "/sessions/students/newStudent",
   },
   {
-    name: "Classes",
-    href: "/sessions/school/classes",
+    name: "Student ID Card",
+    href: "/sessions/students/idCard",
   },
   {
     name: "Help Center",
