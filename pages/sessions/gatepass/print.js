@@ -1,45 +1,65 @@
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { db } from "../../../firebase";
 import UserContext from "../../context/userContext";
+import GatePass from "../../../components/gatePass";
 
 export default function print() {
   const router = useRouter();
-  const [student, setStudent] = useState([]);
-  const a = useContext(UserContext)
+  const [student, setStudent] = useState(null);
+  const a = useContext(UserContext);
   const className = router.query.classes;
   const sectionName = router.query.section;
 
-
-
   const GetStudentList = async () => {
-    const docRef = doc(
-      db,
-      `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`,
-      router.query.sid
-    );
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists) {
-      setStudent(docSnap.data());
-      console.log(docSnap.data());
+    try {
+      const docRef = doc(
+        db,
+        `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`,
+        router.query.sid
+      );
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists) {
+        setStudent(docSnap.data());
+        // console.log(docSnap.data());
+      }
+    } catch {
+      alert("plese go back and select student again");
+      router.replace("/sessions/gatepass");
     }
   };
 
-  return (
-    <><div>
+ 
+
+  if (student) {
+    return (
+      <>
+        <div id="print">
+          <GatePass props={student} />
+        </div>
+        
+      </>
+    );
+  } else {
+    return (
+      <>
+        <div>
           {router.query.sid}
           {router.query.classes}
           {router.query.section}
+        </div>
+        <div className="align-middle justify-center">
           <button
-              onClick={() => {
-                  GetStudentList();
-              } }
-              className="px-10 w-44 h-8 block bg-red-500"
+            onClick={() => {
+              GetStudentList(); 
+            }}
           >
-              akash
+            Generate
           </button>
-      </div>
-      {student.name &&<div>student is there somewhere</div>}</>
-  );
+          {/* {student.name && <div>student is there somewhere</div>} */}
+        </div>
+      </>
+    );
+  }
 }
