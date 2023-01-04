@@ -199,7 +199,7 @@ export default function GatePass() {
                           <span class="inline-block w-1/3 md:hidden font-bold">
                             Actions
                           </span>
-                          <button onClick={()=>{router.push({pathname: "/sessions/gatepass/print",query: {classes: className,section:sectionName,sid:`${e.name}`}},"/sessions/gatepass/print")}} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 border border-blue-500 rounded">
+                          <button onClick={()=>{router.push({pathname: "/sessions/gatepass/print",query: {classes: className,section:sectionName,sid:`${e.Sr_Number}`}})}} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 border border-blue-500 rounded">
                             Print
                           </button>
                           

@@ -19,6 +19,7 @@ import { auth, db, storage } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
 import { async } from "@firebase/util";
+import { Input } from "postcss";
 
 export default function NewStudent() {
   const router = useRouter();
@@ -48,7 +49,9 @@ export default function NewStudent() {
   const [lSchoolResult, setLSchoolResult] = useState("");
   const [tcStatus, setTcStatus] = useState("");
   const [rteStatus, setRteStatus] = useState("");
-  const [admissionDate, setAdmissionDate] = useState("");
+  const [admissionDay, setAdmissionDay] = useState("");
+  const [admissionMonth, setAdmissionMonth] = useState("");
+  const [admissionYear, setAdmissionYear] = useState("");
   const [aadharStatus, setAadharStatus] = useState("");
   const [house, setHouse] = useState();
 
@@ -59,19 +62,87 @@ export default function NewStudent() {
   const [imgUrl, setImgUrl] = useState(
     "https://st3.depositphotos.com/13159112/17145/v/450/depositphotos_171453724-stock-illustration-default-avatar-profile-icon-grey.jpg"
   );
-  const [tcUrl, setTcUrl] = useState();
-  const [aadharUrl, setAadharUrl] = useState();
+  const [tcUrl, setTcUrl] = useState("nil");
+  const [aadharUrl, setAadharUrl] = useState("nil");
 
   const [classList, setClassList] = useState([]);
   const [sectionList, setSectionList] = useState([]);
   const [stopList, setStopList] = useState([]);
   const [houseList, setHouseList] = useState([]);
 
+  const [classFee, setClassFee] = useState();
+  const [transportFee, setTransportFee] = useState(0);
+
   const a = useContext(UserContext);
 
   useEffect(() => {
     GetSectionList();
   }, [className]);
+
+  const months = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "February",
+    "March",
+  ];
+
+  const createDues = async () => {
+    months.map(async (e) => {
+      try {
+        const docRef = doc(
+          db,
+          `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students/${sr}/dues`,
+          e
+        );
+        await setDoc(docRef, {
+          month_Fee: classFee * (months.indexOf(e) + 1),
+        });
+      } catch {}
+    });
+  };
+  const createAccount = async () => {
+    const docRef = doc(
+      db,
+      `users/${a.user}/sessions/${a.session}/studentsAccount`,
+      sr
+    );
+    await setDoc(docRef, {
+      Anual_Fee: 5000,
+      Class_Fee: classFee,
+      transportfees: transportFee,
+    });
+  };
+
+  const GetClassFee = async () => {
+    const docRef = doc(
+      db,
+      `users/${a.user}/sessions/${a.session}/classes`,
+      className
+    );
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists) {
+      setClassFee(docSnap.data().Class_Fee);
+    }
+  };
+  const GetTransportFee = async () => {
+    const docRef = doc(
+      db,
+      `users/${a.user}/sessions/${a.session}/stops`,
+      busStopName
+    );
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists) {
+      setTransportFee(docSnap.data().Stop_Fee);
+    }
+  };
 
   const GetClassList = async () => {
     const docRef = collection(
@@ -219,8 +290,6 @@ export default function NewStudent() {
     );
   };
 
-  
-
   const submitForm = async () => {
     if (
       !sr ||
@@ -280,8 +349,8 @@ export default function NewStudent() {
             ),
             {
               Sr_Number: sr,
-              Class:className,
-              Section:sectionName,
+              Class: className,
+              Section: sectionName,
               name: name,
               Father_Name: fName,
               Mother_Name: mName,
@@ -303,7 +372,8 @@ export default function NewStudent() {
               Last_School_Board: lSchoolBoard,
               Last_School_Result: lSchoolResult,
               RTE_Status: rteStatus,
-              Admission_Date: admissionDate,
+              Admission_Date: `${admissionDay}/${admissionMonth}/${admissionYear}`,
+              Admission_Month: admissionMonth,
               Tc_Available: tcStatus,
               Aadhar_Available: aadharStatus,
               House: house,
@@ -311,6 +381,8 @@ export default function NewStudent() {
               TC: tcUrl,
               Aadhar: aadharUrl,
               created: Timestamp.now(),
+              Fees: classFee,
+              Transport_Fee: transportFee,
             }
           )
             .then(async () => {
@@ -340,7 +412,13 @@ export default function NewStudent() {
                 console.log("No such document!");
               }
             })
-            .then(async()=>{
+            .then(() => {
+              createAccount();
+            })
+            .then(() => {
+              createDues();
+            })
+            .then(async () => {
               await setDoc(
                 doc(
                   db,
@@ -349,8 +427,8 @@ export default function NewStudent() {
                 ),
                 {
                   Sr_Number: sr,
-                  Class:className,
-                  Section:sectionName,
+                  Class: className,
+                  Section: sectionName,
                   name: name,
                   Father_Name: fName,
                   Mother_Name: mName,
@@ -372,7 +450,8 @@ export default function NewStudent() {
                   Last_School_Board: lSchoolBoard,
                   Last_School_Result: lSchoolResult,
                   RTE_Status: rteStatus,
-                  Admission_Date: admissionDate,
+                  Admission_Date: `${admissionDay}/${admissionMonth}/${admissionYear}`,
+                  admission_Month: admissionMonth,
                   Tc_Available: tcStatus,
                   Aadhar_Available: aadharStatus,
                   House: house,
@@ -380,8 +459,9 @@ export default function NewStudent() {
                   TC: tcUrl,
                   Aadhar: aadharUrl,
                   created: Timestamp.now(),
+                  fees: classFee,
                 }
-              )
+              );
             })
             .then(() => {
               alert("student regestered successfully");
@@ -392,19 +472,6 @@ export default function NewStudent() {
         }
       }
     }
-  };
-
-  const update = async () => {
-    const classRef = doc(
-      db,
-      `users/${a.user}/sessions/${a.session}/classes/`,
-      className
-    );
-    const sessionRef = doc(
-      db,
-      `users/${a.user}/sessions/${a.session}/classes/${className}/sections/`,
-      sectionName
-    );
   };
 
   return (
@@ -641,6 +708,9 @@ export default function NewStudent() {
                     </label>
                     <div>
                       <select
+                        onClick={() => {
+                          GetClassFee();
+                        }}
                         onChange={(e) => {
                           setSectionName(e.target.value);
                         }}
@@ -689,6 +759,9 @@ export default function NewStudent() {
                     <div>
                       {transportStatus.valueOf() == "Yes" && (
                         <select
+                          onClick={() => {
+                            GetTransportFee();
+                          }}
                           onChange={(e) => {
                             setBusStopName(e.target.value);
                           }}
@@ -711,19 +784,21 @@ export default function NewStudent() {
                       Select House
                     </label>
                     <div>
-                      
-                        <select onClick={()=>{GetHouseList()}}
-                          onChange={(e) => {
-                            setHouse(e.target.value);
-                          }}
-                          class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
-                          id="department"
-                        >
-                          <option>Please Select</option>
-                          {houseList.map((e) => {
-                            return <option>{e.Name}</option>;
-                          })}
-                        </select>
+                      <select
+                        onClick={() => {
+                          GetHouseList();
+                        }}
+                        onChange={(e) => {
+                          setHouse(e.target.value);
+                        }}
+                        class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
+                        id="department"
+                      >
+                        <option>Please Select</option>
+                        {houseList.map((e) => {
+                          return <option>{e.Name}</option>;
+                        })}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -965,15 +1040,39 @@ export default function NewStudent() {
                     >
                       Admission Date
                     </label>
-                    <input
-                      onChange={(e) => {
-                        setAdmissionDate(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="application-link"
-                      type="text"
-                      placeholder={"Pass / Fail"}
-                    />
+                    <div>
+                      <input
+                        onChange={(e) => {
+                          setAdmissionDay(e.target.value);
+                        }}
+                        class="w-1/3 bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                        id="application-link"
+                        type="number"
+                        min="1"
+                        max="31"
+                        placeholder={"Pass / Fail"}
+                      />
+                      <input
+                        onChange={(e) => {
+                          setAdmissionMonth(e.target.value);
+                        }}
+                        class="w-1/3 bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                        id="application-link"
+                        type="number"
+                        max="12"
+                      />
+
+                      <input
+                        onChange={(e) => {
+                          setAdmissionYear(e.target.value);
+                        }}
+                        class="w-1/3 bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                        id="application-link"
+                        type="number"
+                        minLength={4}
+                        placeholder={"Pass / Fail"}
+                      />
+                    </div>
                   </div>
                 </div>
 

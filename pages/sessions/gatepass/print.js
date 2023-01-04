@@ -12,6 +12,12 @@ export default function print() {
   const className = router.query.classes;
   const sectionName = router.query.section;
 
+  useEffect(() => {
+   console.log(student);
+   console.log(a.user);
+  }, [student])
+  
+
   const GetStudentList = async () => {
     try {
       const docRef = doc(
@@ -22,7 +28,7 @@ export default function print() {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists) {
         setStudent(docSnap.data());
-        // console.log(docSnap.data());
+        console.log(docSnap.data());
       }
     } catch {
       alert("plese go back and select student again");
