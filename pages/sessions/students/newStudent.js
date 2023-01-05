@@ -95,15 +95,44 @@ export default function NewStudent() {
   ];
 
   const createDues = async () => {
+    var total = 0;
     months.map(async (e) => {
       try {
         const docRef = doc(
           db,
-          `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students/${sr}/dues`,
-          e
+          `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/${e}/students`,
+          sr
         );
         await setDoc(docRef, {
-          month_Fee: classFee * (months.indexOf(e) + 1),
+          month: e,
+          month_Due: rteStatus === "Yes" ? 0:  classFee * (months.indexOf(e) + 1),
+          transport_due: transportFee * (months.indexOf(e) + 1),
+          name: name,
+          class: className,
+          section: sectionName,
+          father_name: fName,
+          Place: place,
+          Mobile: mobile,
+          Sr_Number: sr,
+          total:
+            classFee * (months.indexOf(e) + 1) +
+            transportFee * (months.indexOf(e) + 1),
+        }).then(async () => {
+          const dueRef = doc(
+            db,
+            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/`,
+            e
+          );
+          const Snap = await getDoc(dueRef);
+
+          if (Snap.exists()) {
+            await updateDoc(dueRef, {
+              total_Due:
+                Snap.data().total_Due +
+                classFee * (months.indexOf(e) + 1) +
+                transportFee * (months.indexOf(e) + 1),
+            });
+          }
         });
       } catch {}
     });
@@ -122,25 +151,36 @@ export default function NewStudent() {
   };
 
   const GetClassFee = async () => {
-    const docRef = doc(
-      db,
-      `users/${a.user}/sessions/${a.session}/classes`,
-      className
-    );
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists) {
-      setClassFee(docSnap.data().Class_Fee);
+    try {
+      const docRef = doc(
+        db,
+        `users/${a.user}/sessions/${a.session}/classes`,
+        className
+      );
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists) {
+        setClassFee(docSnap.data().Class_Fee);
+      }
+    } catch {
+      alert("class value missing");
     }
   };
   const GetTransportFee = async () => {
-    const docRef = doc(
-      db,
-      `users/${a.user}/sessions/${a.session}/stops`,
-      busStopName
-    );
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists) {
-      setTransportFee(docSnap.data().Stop_Fee);
+    if (transportStatus === "Yes") {
+      try {
+        const docRef = doc(
+          db,
+          `users/${a.user}/sessions/${a.session}/stops`,
+          busStopName
+        );
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists) {
+          setTransportFee(docSnap.data().Stop_Fee);
+          console.log(transportFee);
+        }
+      } catch (e) {
+        alert("plese Select bus stop first");
+      }
     }
   };
 
@@ -759,9 +799,6 @@ export default function NewStudent() {
                     <div>
                       {transportStatus.valueOf() == "Yes" && (
                         <select
-                          onClick={() => {
-                            GetTransportFee();
-                          }}
                           onChange={(e) => {
                             setBusStopName(e.target.value);
                           }}
@@ -787,6 +824,7 @@ export default function NewStudent() {
                       <select
                         onClick={() => {
                           GetHouseList();
+                          GetTransportFee();
                         }}
                         onChange={(e) => {
                           setHouse(e.target.value);

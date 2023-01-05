@@ -75,8 +75,8 @@ const studentTabs = [
 ];
 const accountTabs = [
   {
-    name: "Fees Management",
-    href: "/sessions/account/fee",
+    name: "View Dues",
+    href: "/sessions/account/viewDue",
   },
   
   
