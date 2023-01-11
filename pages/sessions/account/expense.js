@@ -1,71 +1,67 @@
+import { collection, doc, getDoc, getDocs, query, setDoc } from "firebase/firestore";
+import { Input } from "postcss";
 import React, { useContext, useEffect, useState } from "react";
-import Nav from "../../../components/navbar";
-import Header from "../../../components/dropdown";
-import { auth, db } from "../../../firebase";
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
+import { db } from "../../../firebase";
+import { async } from "@firebase/util";
+import { useRouter } from "next/router";
 
-export default function Buses() {
+export default function Account() {
+  const current = new Date();
+  const time = new Intl.DateTimeFormat("en-IN", { timeStyle: "medium" }).format(
+    current.getTime()
+  );
+
+  const d = `${current.getDate()}-${
+    current.getMonth() + 1
+  }-${current.getFullYear()}`;
+  var total = 0;
+
+  const [expenseList, setExpenseList] = useState([]);
+
   const a = useContext(UserContext);
+  const [source, setSource] = useState();
+  const [amount, setAmount] = useState();
+  const [date, setDate] = useState(d);
+  const router = useRouter();
 
-  const [stopName, setStopName] = useState("");
-  const [stopFee, setStopFee] = useState();
-  const [stopBus, setStopBus] = useState("");
-  const [stopList, setStopList] = useState([]);
-  const [busList, setBusList] = useState([]);
-
-  useEffect(() => {
-    GetStopList();
-    GetBusList();
-  }, [stopList]);
-
-  const createStop = async (name, fee, bus) => {
-    if (!name || !fee || !bus) {
-      alert("Enter Missing Details");
-    } else {
-      try {
-        const docRef = `users/${a.user}/sessions/${a.session}/stops`;
-        await setDoc(doc(db, docRef, `${name}`), {
-          Stop_Name: name,
-          Stop_Fee: fee,
-          Stop_Bus: bus,
-        }).then(() => {
-          alert("success");
-        });
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
+  const getExpense = async () => {
+    try {
+      const docRef = collection(
+        db,
+        `users/${a.user}/sessions/${a.session}/dayBook/${d}/expense`
+      );
+      const docSnap = await getDocs(docRef);
+      var list = [];
+      docSnap.forEach((doc) => {
+        list.push(doc.data());
+      });
+      setExpenseList(list);
+    } catch (e) {
+      alert(e.message);
     }
   };
+  
+  
 
-  const GetBusList = async () => {
-    const docRef = collection(
-      db,
-      `users/${a.user}/sessions/${a.session}/buses`
-    );
-    const docSnap = await getDocs(docRef);
-    var list = [];
-    docSnap.forEach((doc) => {
-      list.push(doc.data());
-    });
-    setBusList(list);
+  const setExpense = async () => {
+    try {
+        const docRef = doc(
+          db,
+          `users/${a.user}/sessions/${a.session}/dayBook/${date}/expense`,time
+        );
+            await setDoc(docRef,{
+                name: source,
+                Total_Paid:amount,
+                Time:time    
+            }).then(()=>{
+              alert("success")
+            })
+    }catch(e){alert(e.message)}
   };
-
-  const GetStopList = async () => {
-    const docRef = collection(
-      db,
-      `users/${a.user}/sessions/${a.session}/stops`
-    );
-    const docSnap = await getDocs(docRef);
-    var list = [];
-    docSnap.forEach((doc) => {
-      list.push(doc.data());
-    });
-    setStopList(list);
-  };
-
-  const [isConfirm, setIsConfirm] = useState(false);
+  useEffect(() => {
+    getExpense()
+  }, [expenseList])
 
   return (
     <>
@@ -73,7 +69,7 @@ export default function Buses() {
         <div class="bg-gray-100 flex bg-local w-screen">
           <div class="bg-gray-100 mx-auto w-screen h-auto bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
-              <h1 className="text-center font-bold text-2xl">Add New Stop</h1>
+              <h1 className="text-center font-bold text-2xl">Add Expences</h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
                 <div class="-mx-3 md:flex mb-6">
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -81,11 +77,11 @@ export default function Buses() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="company"
                     >
-                      Stop Name*
+                      Expense Source*
                     </label>
                     <input
                       onChange={(e) => {
-                        setStopName(e.target.value);
+                        setSource(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -98,11 +94,11 @@ export default function Buses() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="company"
                     >
-                      Stop Fee*
+                      Amount*
                     </label>
                     <input
                       onChange={(e) => {
-                        setStopFee(e.target.value);
+                        setAmount(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -110,61 +106,68 @@ export default function Buses() {
                       placeholder="Netboard"
                     />
                   </div>
-                  <div class="md:w-1/2 px-3">
+                  <div class="md:w-1/2 px-3 mb-6 md:mb-0">
                     <label
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="title"
+                      for="company"
                     >
-                      Stop Bus*
+                      Date*
                     </label>
-                    <select
+                    <input
                       onChange={(e) => {
-                        setStopBus(e.target.value);
+                        setDate(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="title"
+                      value={date}
                       type="text"
-                      placeholder="B.tech / cse / CSP242 "
-                    >
-                      <option>please select</option>
-                      {busList.map((e) => {
-                        return <option>{e.Bus_Number}</option>;
-                      })}
-                    </select>
+                      placeholder="DD-MM-YYYY"
+                    />
                   </div>
+
                   <button
                     onClick={() => {
-                      createStop(stopName, stopFee, stopBus);
+                      if(!date || !amount || !source){
+                        alert('Information Missing')
+                      }else{
+
+                        setExpense();
+                      }
                     }}
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   >
-                    Add
+                    Insert 
                   </button>
                 </div>
               </div>
             </div>
-
             <div>
+              <h1 className="text-center font-bold text-2xl">
+                Today Expense Details
+              </h1>
+
               <table class="min-w-full border-collapse block md:table">
                 <thead class="block md:table-header-group">
                   <tr class="border border-grey-500 md:border-none block md:table-row absolute -top-full md:top-auto -left-full md:left-auto  md:relative ">
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Stop Number
+                      Sn
                     </th>
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Stop Bus
+                      Particulars
                     </th>
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Stop Fee
+                      Amount
                     </th>
 
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Actions
+                      Action
                     </th>
                   </tr>
                 </thead>
                 <tbody class="block md:table-row-group">
-                  {stopList.map((e, index) => {
+                  {expenseList.map((e, index) => {
+                    try {
+                        total += Number(e.Total_Paid);
+                      } catch {}
                     return (
                       <tr
                         key={index}
@@ -172,44 +175,58 @@ export default function Buses() {
                       >
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
+                            sr
+                          </span>
+                          {index + 1}
+                        </td>
+                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
+                          <span class="inline-block w-1/3 md:hidden font-bold">
                             name
                           </span>
-                          {e.Stop_Name}
+                          {e.name}
                         </td>
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            bus
+                            amount
                           </span>
-                          {e.Stop_Bus}
-                        </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            fee
-                          </span>
-                          {e.Stop_Fee}
+                          {e.Total_Paid}
                         </td>
 
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            Actions
+                            action
                           </span>
-                          <button onClick={()=>{
-                           setIsConfirm(true)
-                          }} class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded">
+                          <button
+                            onClick={() => {
+                              router.push({
+                                pathname: "/sessions/account/payment",
+                                query: e,
+                              });
+                            }}
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 border border-blue-500 rounded"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              router.push({
+                                pathname: "/sessions/account/payment",
+                                query: e,
+                              });
+                            }}
+                            class="bg-red-500 hover:bg-blue-700 text-white font-bold py-1 px-2 border border-red-500 rounded"
+                          >
                             Delete
                           </button>
-                          {isConfirm && <button onClick={()=>{
-                            const docRef = doc(db,`users/${a.user}/sessions/${a.session}/stops`,e.Stop_Name);
-                            deleteDoc(docRef);
-                            setIsConfirm(false);
-                          }} class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded">
-                            Confirm
-                          </button>}
-                          
                         </td>
                       </tr>
                     );
                   })}
+                  <tr class="bg-gray-300 border border-grey-500 md:border-none block md:table-row">
+                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
+                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">total</td>
+                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell font-bold text-red-600">{total}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>

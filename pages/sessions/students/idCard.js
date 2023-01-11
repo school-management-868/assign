@@ -57,7 +57,7 @@ export default function IdCard() {
     <>
       <div className="w-screen">
         <div class="bg-gray-100 flex bg-local w-screen">
-          <div class="bg-gray-100 mx-auto w-screen h-screen bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
+          <div class="bg-gray-100 mx-auto w-screen h-auto bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
               <h1 className="text-center font-bold text-2xl">Print Id Cards</h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">

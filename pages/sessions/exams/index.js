@@ -2,36 +2,61 @@ import React, { useContext, useEffect, useState } from "react";
 import Nav from "../../../components/navbar";
 import Header from "../../../components/dropdown";
 import { auth, db } from "../../../firebase";
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
+import { async } from "@firebase/util";
 
-export default function Buses() {
+export default function Exams() {
   const a = useContext(UserContext);
 
-  const [stopName, setStopName] = useState("");
-  const [stopFee, setStopFee] = useState();
-  const [stopBus, setStopBus] = useState("");
-  const [stopList, setStopList] = useState([]);
-  const [busList, setBusList] = useState([]);
+  const [examName, setExamName] = useState("");
+  const [maxmark, setMaxMark] = useState("");
+  const [examList, setExamList] = useState([]);
+  const subList = [
+    "Hindi",
+    "English",
+    "Mathematics",
+    "Social Science",
+    "Science",
+    "MSC and GK ",
+  ];
 
   useEffect(() => {
-    GetStopList();
-    GetBusList();
-  }, [stopList]);
+    GetExamList();
+  }, [examList]);
 
-  const createStop = async (name, fee, bus) => {
-    if (!name || !fee || !bus) {
+  const [subName, setSubName] = useState();
+
+  const createExam = async () => {
+    if (!examName || !maxmark) {
       alert("Enter Missing Details");
     } else {
       try {
-        const docRef = `users/${a.user}/sessions/${a.session}/stops`;
-        await setDoc(doc(db, docRef, `${name}`), {
-          Stop_Name: name,
-          Stop_Fee: fee,
-          Stop_Bus: bus,
-        }).then(() => {
-          alert("success");
+        const docRef = `users/${a.user}/sessions/${a.session}/exams/`;
+        await setDoc(doc(db, docRef, examName), {
+          Name: examName,
+          Maximum_Marks: maxmark,
+        }).then(async () => {
+          subList.map(async (e) => {
+            try {
+              const docRef = `users/${a.user}/sessions/${a.session}/exams/${examName}/subjects/`;
+              await setDoc(doc(db, docRef, e), {
+                Name: e,
+                Exam: examName,
+                Maximum_Marks: maxmark,
+              });
+            } catch (e) {
+              console.error("Error adding document: ", e);
+            }
+          });
         });
       } catch (e) {
         console.error("Error adding document: ", e);
@@ -39,33 +64,21 @@ export default function Buses() {
     }
   };
 
-  const GetBusList = async () => {
+  const GetExamList = async () => {
     const docRef = collection(
       db,
-      `users/${a.user}/sessions/${a.session}/buses`
+      `users/${a.user}/sessions/${a.session}/exams`
     );
     const docSnap = await getDocs(docRef);
     var list = [];
     docSnap.forEach((doc) => {
       list.push(doc.data());
     });
-    setBusList(list);
-  };
-
-  const GetStopList = async () => {
-    const docRef = collection(
-      db,
-      `users/${a.user}/sessions/${a.session}/stops`
-    );
-    const docSnap = await getDocs(docRef);
-    var list = [];
-    docSnap.forEach((doc) => {
-      list.push(doc.data());
-    });
-    setStopList(list);
+    setExamList(list);
   };
 
   const [isConfirm, setIsConfirm] = useState(false);
+  const [subl, setSubL] = useState(["fgdsfg", "dfsg"]);
 
   return (
     <>
@@ -73,7 +86,7 @@ export default function Buses() {
         <div class="bg-gray-100 flex bg-local w-screen">
           <div class="bg-gray-100 mx-auto w-screen h-auto bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
-              <h1 className="text-center font-bold text-2xl">Add New Stop</h1>
+              <h1 className="text-center font-bold text-2xl">Add New Exam</h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
                 <div class="-mx-3 md:flex mb-6">
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -81,32 +94,15 @@ export default function Buses() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="company"
                     >
-                      Stop Name*
+                      Name*
                     </label>
                     <input
                       onChange={(e) => {
-                        setStopName(e.target.value);
+                        setExamName(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
                       type="text"
-                      placeholder="Netboard"
-                    />
-                  </div>
-                  <div class="md:w-1/2 px-3 mb-6 md:mb-0">
-                    <label
-                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="company"
-                    >
-                      Stop Fee*
-                    </label>
-                    <input
-                      onChange={(e) => {
-                        setStopFee(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="company"
-                      type="number"
                       placeholder="Netboard"
                     />
                   </div>
@@ -115,26 +111,22 @@ export default function Buses() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="title"
                     >
-                      Stop Bus*
+                      Maximum Marks
                     </label>
-                    <select
+                    <input
                       onChange={(e) => {
-                        setStopBus(e.target.value);
+                        setMaxMark(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
-                      type="text"
+                      type="number"
                       placeholder="B.tech / cse / CSP242 "
-                    >
-                      <option>please select</option>
-                      {busList.map((e) => {
-                        return <option>{e.Bus_Number}</option>;
-                      })}
-                    </select>
+                    />
                   </div>
+
                   <button
                     onClick={() => {
-                      createStop(stopName, stopFee, stopBus);
+                      createExam();
                     }}
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   >
@@ -149,13 +141,7 @@ export default function Buses() {
                 <thead class="block md:table-header-group">
                   <tr class="border border-grey-500 md:border-none block md:table-row absolute -top-full md:top-auto -left-full md:left-auto  md:relative ">
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Stop Number
-                    </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Stop Bus
-                    </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Stop Fee
+                      Exam Name
                     </th>
 
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
@@ -164,7 +150,7 @@ export default function Buses() {
                   </tr>
                 </thead>
                 <tbody class="block md:table-row-group">
-                  {stopList.map((e, index) => {
+                  {examList.map((e, index) => {
                     return (
                       <tr
                         key={index}
@@ -172,40 +158,40 @@ export default function Buses() {
                       >
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            name
+                            Name
                           </span>
-                          {e.Stop_Name}
-                        </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            bus
-                          </span>
-                          {e.Stop_Bus}
-                        </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            fee
-                          </span>
-                          {e.Stop_Fee}
+                          {e.Name}
                         </td>
 
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
                             Actions
                           </span>
-                          <button onClick={()=>{
-                           setIsConfirm(true)
-                          }} class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded">
+
+                          <button
+                            onClick={() => {
+                              setIsConfirm(true);
+                            }}
+                            class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded"
+                          >
                             Delete
                           </button>
-                          {isConfirm && <button onClick={()=>{
-                            const docRef = doc(db,`users/${a.user}/sessions/${a.session}/stops`,e.Stop_Name);
-                            deleteDoc(docRef);
-                            setIsConfirm(false);
-                          }} class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded">
-                            Confirm
-                          </button>}
-                          
+                          {isConfirm && (
+                            <button
+                              onClick={() => {
+                                const docRef = doc(
+                                  db,
+                                  `users/${a.user}/sessions/${a.session}/exams`,
+                                  e.Name
+                                );
+                                deleteDoc(docRef);
+                                setIsConfirm(false);
+                              }}
+                              class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded"
+                            >
+                              Confirm
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

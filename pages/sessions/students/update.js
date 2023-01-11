@@ -18,56 +18,46 @@ import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { auth, db, storage } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import UserContext from "../../context/userContext";
-import { async } from "@firebase/util";
-import { Input } from "postcss";
-import DatePicker from "react-datepicker";
-
-import "react-datepicker/dist/react-datepicker.css";
 
 export default function NewStudent() {
   const router = useRouter();
-  const [sr, setSr] = useState("");
-  const [name, setName] = useState("");
-  const [fName, setFName] = useState("");
-  const [mName, setMName] = useState("");
-  const [dob, setDob] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [fmobile, setFMobile] = useState("");
-  const [age, setAge] = useState("");
-  const [address, setAddress] = useState("");
-  const [ward, setWard] = useState("");
-  const [addSub, setAddSub] = useState("");
-  const [className, setClassName] = useState("");
-  const [sectionName, setSectionName] = useState("");
-  const [transportStatus, setTransportStatus] = useState("");
-  const [busStopName, setBusStopName] = useState("NaN");
-  // const [busNumber, setBusNumber] = useState("NaN");
-  const [category, setCategory] = useState("");
-  const [caste, setCaste] = useState("");
-  const [religion, setReligion] = useState("");
-  const [place, setPlace] = useState("");
-  const [city, setCity] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [gender, setGender] = useState("");
-  const [lSchool, setLSchool] = useState("");
-  const [lSchoolAdd, setLSchoolAdd] = useState("");
-  const [lSchoolBoard, setLSchoolBoard] = useState("");
-  const [lSchoolResult, setLSchoolResult] = useState("");
-  const [tcStatus, setTcStatus] = useState("");
-  const [rteStatus, setRteStatus] = useState("");
-  const [admissionDay, setAdmissionDay] = useState("");
-  const [admissionMonth, setAdmissionMonth] = useState("");
-  const [admissionYear, setAdmissionYear] = useState("");
-  const [aadharStatus, setAadharStatus] = useState("");
-  const [house, setHouse] = useState();
+  const s = router.query;
+  const [sr, setSr] = useState(s.Sr_Number);
+  const [name, setName] = useState(s.name);
+  const [fName, setFName] = useState(s.Father_Name);
+  const [mName, setMName] = useState(s.Mother_Name);
+  const [dob, setDob] = useState(s.Date_Of_Birth);
+  const [mobile, setMobile] = useState(s.Mobile_Number);
+  const [fmobile, setFMobile] = useState(s.Father_Mobile_Number);
+  const [age, setAge] = useState(s.Age);
+  const [address, setAddress] = useState(s.Address);
+  const [className, setClassName] = useState(s.Class);
+  const [sectionName, setSectionName] = useState(s.Section);
+  const [transportStatus, setTransportStatus] = useState(s.Transport_Status);
+  const [busStopName, setBusStopName] = useState(s.BusStop_Name);
+  // const [busNumber, setBusNumber] = useState(s."NaN");
+  const [category, setCategory] = useState(s.Category);
+  const [caste, setCaste] = useState(s.Caste);
+  const [place, setPlace] = useState(s.Place);
+  const [city, setCity] = useState(s.City);
+  const [pincode, setPincode] = useState(s.PinCode);
+  const [gender, setGender] = useState(s.Gender);
+  const [lSchool, setLSchool] = useState(s.Last_School);
+  const [lSchoolAdd, setLSchoolAdd] = useState(s.Last_School_Address);
+  const [lSchoolBoard, setLSchoolBoard] = useState(s.Last_School_Board);
+  const [lSchoolResult, setLSchoolResult] = useState(s.Last_School_Result);
+  const [tcStatus, setTcStatus] = useState(s.Tc_Available);
+  const [rteStatus, setRteStatus] = useState(s.RTE_Status);
+
+  const [aadharStatus, setAadharStatus] = useState(s.Aadhar_Available);
+  const [house, setHouse] = useState(s.House);
 
   const [tcFile, setTcFile] = useState("nil");
   const [aadharFile, setAadharFile] = useState("nil");
   const [image, setImage] = useState("nil");
 
-  const [imgUrl, setImgUrl] = useState(
-    "https://st3.depositphotos.com/13159112/17145/v/450/depositphotos_171453724-stock-illustration-default-avatar-profile-icon-grey.jpg"
-  );
+  const [imgUrl, setImgUrl] = useState(s.Image);
+
   const [tcUrl, setTcUrl] = useState("nil");
   const [aadharUrl, setAadharUrl] = useState("nil");
 
@@ -90,12 +80,6 @@ export default function NewStudent() {
     current.getMonth() + 1
   }-${current.getFullYear()}`;
 
-  const [date, setDate] = useState(current);
-
-  useEffect(() => {
-    GetSectionList();
-  }, [className]);
-
   const months = [
     "April",
     "May",
@@ -111,87 +95,71 @@ export default function NewStudent() {
     "March",
   ];
 
+  useEffect(() => {
+    GetHouseList();
+    GetStopList();
+  }, []);
+
   const createDues = async () => {
     var total = 0;
-    months.map(async (e) => {
-      try {
-        const docRef = doc(
-          db,
-          `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/${e}/students`,
-          sr
-        );
-        await setDoc(docRef, {
-          month: e,
-          month_Due:
-            rteStatus === "Yes" ? 0 : classFee * (months.indexOf(e) + 1),
-          transport_due:
-            e == "June"
-              ? transportFee * 2
-              : transportFee * (months.indexOf(e) + 1),
-          name: name,
-          class: className,
-          section: sectionName,
-          father_name: fName,
-          Place: place,
-          Mobile: mobile,
-          Sr_Number: sr,
-          total:
-            (rteStatus === "Yes" || ward === "Yes" ? 0 : classFee * (months.indexOf(e) + 1)) +
-            (e === "June" ? 0 : transportFee * (months.indexOf(e) + 1)),
-        }).then(async () => {
-          const dueRef = doc(
+    if (transportStatus === "No") {
+      months.map(async (e) => {
+        if (index + 1 >= admissionMonth) {
+          try {
+            const docRef = doc(
+              db,
+              `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/${e}/students`,
+              sr
+            );
+            await updateDoc(docRef, {
+              name: name,
+              class: className,
+              section: sectionName,
+              father_name: fName,
+              Place: place,
+              Mobile: mobile,
+              transport_due: 0,
+            });
+          } catch {}
+        } else {
+          try {
+            const docRef = doc(
+              db,
+              `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/${e}/students`,
+              sr
+            );
+            await updateDoc(docRef, {
+              name: name,
+              class: className,
+              section: sectionName,
+              father_name: fName,
+              Place: place,
+              Mobile: mobile,
+            });
+          } catch {}
+        }
+      });
+    } else {
+      months.map(async (e) => {
+        try {
+          const docRef = doc(
             db,
-            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/`,
-            e
+            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/${e}/students`,
+            sr
           );
-          const Snap = await getDoc(dueRef);
-
-          if (Snap.exists()) {
-            await updateDoc(dueRef, {
-              total_Due:
-                Snap.data().total_Due +
-                (rteStatus === "Yes" ? 0 : classFee * (months.indexOf(e) + 1)) +
-                (e === "June" ? 0 : transportFee * (months.indexOf(e) + 1)),
-            });
-          } else {
-            await setDoc(dueRef, {
-              total_Due:
-                (rteStatus === "Yes" ? 0 : classFee * (months.indexOf(e) + 1)) +
-                (e === "June" ? 0 : transportFee * (months.indexOf(e) + 1)),
-            });
-          }
-        });
-      } catch {}
-    });
-  };
-  const createAccount = async () => {
-    const docRef = doc(
-      db,
-      `users/${a.user}/sessions/${a.session}/studentsAccount`,
-      sr
-    );
-    await setDoc(docRef, {
-      Anual_Fee: 5000,
-      Class_Fee: classFee,
-      transportfees: transportFee,
-    });
-  };
-
-  const GetClassFee = async () => {
-    try {
-      const docRef = doc(
-        db,
-        `users/${a.user}/sessions/${a.session}/classes`,
-        className
-      );
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists) {
-        setClassFee(docSnap.data().Class_Fee);
-      }
-    } catch {
-      alert("class value missing");
+          await updateDoc(docRef, {
+            name: name,
+            class: className,
+            section: sectionName,
+            father_name: fName,
+            Place: place,
+            Mobile: mobile,
+          });
+        } catch {}
+      });
     }
   };
+
   const GetTransportFee = async () => {
     if (transportStatus === "Yes") {
       try {
@@ -208,40 +176,6 @@ export default function NewStudent() {
       } catch (e) {
         alert("plese Select bus stop first");
       }
-    }
-  };
-
-  const GetClassList = async () => {
-    const docRef = collection(
-      db,
-      `users/${a.user}/sessions/${a.session}/classes`
-    );
-    const docSnap = await getDocs(docRef);
-    var list = [];
-    docSnap.forEach((doc) => {
-      list.push(doc.data());
-    });
-    setClassList(list);
-  };
-
-  const GetSectionList = async () => {
-    try {
-      const docRef = collection(
-        db,
-        `users/${a.user}/sessions/${a.session}/classes/${className}/sections`
-      );
-      const docSnap = await getDocs(docRef);
-      var list = [];
-      docSnap.forEach((doc) => {
-        list.push(doc.data());
-      });
-      setSectionList(list);
-    } catch {
-      (e) => {
-        if (!className) {
-          alert("select class first");
-        }
-      };
     }
   };
 
@@ -368,7 +302,6 @@ export default function NewStudent() {
       !fmobile ||
       !age ||
       !address ||
-      !ward ||
       !transportStatus ||
       !busStopName ||
       !category ||
@@ -385,165 +318,96 @@ export default function NewStudent() {
       !aadharStatus ||
       !className ||
       !sectionName ||
-      !house ||
-      !addSub ||
-      !religion
+      !house
     ) {
       alert("some information is missing");
     } else {
-      var oldSr = [];
       try {
-        const q = query(
-          collection(
+        await updateDoc(
+          doc(
             db,
-            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`
+            `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`,
+            sr
           ),
-          where("Sr_Number", "==", sr)
-        );
-
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach((doc) => {
-          oldSr.push(doc.data().Sr_Number);
-        });
-      } catch {}
-
-      if (oldSr.length >= 1) {
-        alert("sr already exist");
-      } else {
-        try {
-          await setDoc(
-            doc(
-              db,
-              `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`,
-              sr
-            ),
-            {
-              Sr_Number: sr,
-              Class: className,
-              Section: sectionName,
-              name: name,
-              Father_Name: fName,
-              Mother_Name: mName,
-              Religion: religion,
-              Date_Of_Birth: dob,
-              Mobile_Number: mobile,
-              Father_Mobile_Number: fmobile,
-              Age: age,
-              Address: address,
-              Transport_Status: transportStatus,
-              BusStop_Name: busStopName,
-              Category: category,
-              Caste: caste,
-              Third_Ward: ward,
-              Place: place,
-              City: city,
-              Additional_Subject: addSub,
-              PinCode: pincode,
-              Gender: gender,
-              Last_School: lSchool,
-              Last_School_Address: lSchoolAdd,
-              Last_School_Board: lSchoolBoard,
-              Last_School_Result: lSchoolResult,
-              RTE_Status: rteStatus,
-              Admission_Date: date,
-              Tc_Available: tcStatus,
-              Aadhar_Available: aadharStatus,
-              House: house,
-              Image: imgUrl,
-              TC: tcUrl,
-              Aadhar: aadharUrl,
-              created: Timestamp.now(),
-              Fees: classFee,
-              Transport_Fee: transportFee,
-            }
-          )
-            .then(async () => {
-              const sessionRef = doc(
-                db,
-                `users/${a.user}/sessions/${a.session}/classes/${className}/sections/`,
-                sectionName
-              );
-              const classRef = doc(
-                db,
-                `users/${a.user}/sessions/${a.session}/classes/`,
-                className
-              );
-
-              const sesSnap = await getDoc(sessionRef);
-              const classSnap = await getDoc(classRef);
-
-              if (sesSnap.exists() && classSnap.exists()) {
-                await updateDoc(classRef, {
-                  Strength: classSnap.data().Strength + 1,
-                });
-                await updateDoc(sessionRef, {
-                  Strength: sesSnap.data().Strength + 1,
-                });
-              } else {
-                // doc.data() will be undefined in this case
-                console.log("No such document!");
+          {
+            name: name,
+            Father_Name: fName,
+            Mother_Name: mName,
+            Date_Of_Birth: dob,
+            Mobile_Number: mobile,
+            Father_Mobile_Number: fmobile,
+            Age: age,
+            Address: address,
+            Transport_Status: transportStatus,
+            BusStop_Name: busStopName,
+            Category: category,
+            Caste: caste,
+            Place: place,
+            City: city,
+            PinCode: pincode,
+            Gender: gender,
+            Last_School: lSchool,
+            Last_School_Address: lSchoolAdd,
+            Last_School_Board: lSchoolBoard,
+            Last_School_Result: lSchoolResult,
+            RTE_Status: rteStatus,
+            Update_Date: d,
+            Tc_Available: tcStatus,
+            Aadhar_Available: aadharStatus,
+            House: house,
+            Image: imgUrl,
+            TC: tcUrl,
+            Aadhar: aadharUrl,
+            Updated: Timestamp.now(),
+            Transport_Fee: transportFee,
+          }
+        )
+          .then(() => {
+            createDues();
+          })
+          .then(async () => {
+            await updateDoc(
+              doc(db, `users/${a.user}/sessions/${a.session}/AllStudents`, sr),
+              {
+                name: name,
+                Father_Name: fName,
+                Mother_Name: mName,
+                Date_Of_Birth: dob,
+                Mobile_Number: mobile,
+                Father_Mobile_Number: fmobile,
+                Age: age,
+                Address: address,
+                Transport_Status: transportStatus,
+                BusStop_Name: busStopName,
+                Category: category,
+                Caste: caste,
+                Place: place,
+                City: city,
+                PinCode: pincode,
+                Gender: gender,
+                Last_School: lSchool,
+                Last_School_Address: lSchoolAdd,
+                Last_School_Board: lSchoolBoard,
+                Last_School_Result: lSchoolResult,
+                RTE_Status: rteStatus,
+                Update_Date: d,
+                Tc_Available: tcStatus,
+                Aadhar_Available: aadharStatus,
+                House: house,
+                Image: imgUrl,
+                TC: tcUrl,
+                Aadhar: aadharUrl,
+                Updated: Timestamp.now(),
+                Transport_Fee: transportFee,
               }
-            })
-            .then(() => {
-              createAccount();
-            })
-            .then(() => {
-              createDues();
-            })
-            .then(async () => {
-              await setDoc(
-                doc(
-                  db,
-                  `users/${a.user}/sessions/${a.session}/AllStudents`,
-                  sr
-                ),
-                {
-                  Sr_Number: sr,
-                  Class: className,
-                  Section: sectionName,
-                  name: name,
-                  Father_Name: fName,
-                  Mother_Name: mName,
-                  Date_Of_Birth: dob,
-                  Mobile_Number: mobile,
-                  Father_Mobile_Number: fmobile,
-                  Religion: religion,
-                  Age: age,
-                  Third_Ward: ward,
-                  Additional_Subject: addSub,
-                  Address: address,
-                  Transport_Status: transportStatus,
-                  BusStop_Name: busStopName,
-                  Category: category,
-                  Caste: caste,
-                  Place: place,
-                  City: city,
-                  PinCode: pincode,
-                  Gender: gender,
-                  Last_School: lSchool,
-                  Last_School_Address: lSchoolAdd,
-                  Last_School_Board: lSchoolBoard,
-                  Last_School_Result: lSchoolResult,
-                  RTE_Status: rteStatus,
-                  Admission_Date: date,
-                  Tc_Available: tcStatus,
-                  Aadhar_Available: aadharStatus,
-                  House: house,
-                  Image: imgUrl,
-                  TC: tcUrl,
-                  Aadhar: aadharUrl,
-                  created: Timestamp.now(),
-                  fees: classFee,
-                }
-              );
-            })
-            .then(() => {
-              alert("student regestered successfully");
-              router.reload();
-            });
-        } catch (e) {
-          console.error("Error adding document: ", e);
-        }
+            );
+          })
+          .then(() => {
+            alert("student Updated successfully");
+            router.reload();
+          });
+      } catch (e) {
+        alert(e.message);
       }
     }
   };
@@ -555,7 +419,7 @@ export default function NewStudent() {
           <div class="bg-gray-100 mx-auto w-screen  bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
               <h1 className="text-center font-bold text-2xl">
-                New Student Details
+                Update Student Details
               </h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
                 <section class="flex items-center justify-center max-w-fit mx-auto pb-10">
@@ -589,15 +453,14 @@ export default function NewStudent() {
                     >
                       SR Number *
                     </label>
-                    <input
-                      onChange={(e) => {
-                        setSr(e.target.value);
-                      }}
+                    <div
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
-                      type="number"
+                      type="text"
                       placeholder="1111"
-                    />
+                    >
+                      {sr}
+                    </div>
                   </div>
                   <div class="md:w-1/2 px-3">
                     <label
@@ -613,6 +476,7 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
                       type="text"
+                      value={name}
                       placeholder="student name"
                     />
                   </div>
@@ -632,7 +496,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
                       type="text"
-                      placeholder="father's Name"
+                      value={fName}
+                      placeholder="father's "
                     />
                   </div>
                   <div class="md:w-1/2 px-3">
@@ -649,6 +514,7 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
                       type="text"
+                      value={mName}
                       placeholder="mother's Name"
                     />
                   </div>
@@ -660,10 +526,17 @@ export default function NewStudent() {
                       for="company"
                     >
                       Student Date Of Birth
-                    </label>  
-                    <div class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3">
-                      <DatePicker selected={date} onChange={(e) => setDob(e)} />
-                    </div>
+                    </label>
+                    <input
+                      onChange={(e) => {
+                        setDob(e.target.value);
+                      }}
+                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                      id="company"
+                      type="text"
+                      value={dob}
+                      placeholder="DD/MM/YYYY"
+                    />
                   </div>
                   <div class="md:w-1/2 px-3">
                     <label
@@ -679,6 +552,7 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
                       type="text"
+                      value={mobile}
                       placeholder="Whatsapp Number"
                     />
                   </div>
@@ -698,7 +572,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
                       type="text"
-                      placeholder="Father's Number For Message"
+                      value={fmobile}
+                      placeholder="DD/MM/YYYY"
                     />
                   </div>
                   <div class="md:w-1/2 px-3">
@@ -706,7 +581,7 @@ export default function NewStudent() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="title"
                     >
-                      Student's Age on 31-March-{current.getFullYear()}
+                      Student's Age
                     </label>
                     <input
                       onChange={(e) => {
@@ -715,7 +590,29 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="title"
                       type="text"
-                      placeholder="Age"
+                      value={age}
+                      placeholder="Whatsapp Number"
+                    />
+                  </div>
+                </div>
+
+                <div class="-mx-3 md:flex mb-6">
+                  <div class="md:w-full px-3">
+                    <label
+                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
+                      for="application-link"
+                    >
+                      Address
+                    </label>
+                    <input
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                      }}
+                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                      id="application-link"
+                      type="text"
+                      value={address}
+                      placeholder="address"
                     />
                   </div>
                 </div>
@@ -729,21 +626,12 @@ export default function NewStudent() {
                       Class*
                     </label>
                     <div>
-                      <select
-                        onClick={() => {
-                          GetClassList();
-                        }}
-                        onChange={(e) => {
-                          setClassName(e.target.value);
-                        }}
+                      <div
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
                       >
-                        <option>Please Select</option>
-                        {classList.map((e) => {
-                          return <option>{e.Name}</option>;
-                        })}
-                      </select>
+                        {className}
+                      </div>
                     </div>
                   </div>
 
@@ -755,21 +643,12 @@ export default function NewStudent() {
                       Section
                     </label>
                     <div>
-                      <select
-                        onClick={() => {
-                          GetClassFee();
-                        }}
-                        onChange={(e) => {
-                          setSectionName(e.target.value);
-                        }}
+                      <div
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
                       >
-                        <option>Please Select</option>
-                        {sectionList.map((e) => {
-                          return <option>{e.Name}</option>;
-                        })}
-                      </select>
+                        {sectionName}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -785,10 +664,10 @@ export default function NewStudent() {
                       <select
                         onChange={(e) => {
                           setTransportStatus(e.target.value);
-                          GetStopList();
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
+                        value={transportStatus}
                       >
                         <option>Please Select</option>
                         <option>Yes</option>
@@ -805,13 +684,17 @@ export default function NewStudent() {
                       Bus Stop Name
                     </label>
                     <div>
-                      {transportStatus.valueOf() == "Yes" && (
+                      {transportStatus === "Yes" && (
                         <select
+                          onClick={() => {
+                            GetTransportFee();
+                          }}
                           onChange={(e) => {
                             setBusStopName(e.target.value);
                           }}
                           class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                           id="department"
+                          value={busStopName}
                         >
                           <option>Please Select</option>
                           {stopList.map((e) => {
@@ -830,15 +713,12 @@ export default function NewStudent() {
                     </label>
                     <div>
                       <select
-                        onClick={() => {
-                          GetHouseList();
-                          GetTransportFee();
-                        }}
                         onChange={(e) => {
                           setHouse(e.target.value);
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
+                        value={house}
                       >
                         <option>Please Select</option>
                         {houseList.map((e) => {
@@ -855,23 +735,6 @@ export default function NewStudent() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="application-link"
                     >
-                      Religion
-                    </label>
-                    <input
-                      onChange={(e) => {
-                        setReligion(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="application-link"
-                      type="text"
-                      placeholder="Religion"
-                    />
-                  </div>
-                  <div class="md:w-full px-3">
-                    <label
-                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="application-link"
-                    >
                       Category
                     </label>
                     <input
@@ -881,7 +744,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Category"
+                      value={category}
+                      placeholder="Priorities etc"
                     />
                   </div>
                   <div class="md:w-full px-3">
@@ -898,52 +762,9 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Caste"
+                      value={caste}
+                      placeholder="Priorities etc"
                     />
-                  </div>
-                </div>
-                <div class="-mx-3 md:flex mb-6">
-                  <div class="md:w-full px-3">
-                    <label
-                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="application-link"
-                    >
-                      Additional SUBJECT
-                    </label>
-                    <select
-                      onChange={(e) => {
-                        setAddSub(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="application-link"
-                      type="text"
-                      placeholder="address"
-                    >
-                      <option>Please Select</option>
-                      <option>Compter </option>
-                      <option>Physical Education</option>
-                    </select>
-                  </div>
-                  <div class="md:w-full px-3">
-                    <label
-                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="application-link"
-                    >
-                      Third Ward
-                    </label>
-                    <select
-                      onChange={(e) => {
-                        setWard(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="application-link"
-                      type="text"
-                      placeholder="address"
-                    >
-                      <option>Please Select</option>
-                      <option>Yes</option>
-                      <option>No</option>
-                    </select>
                   </div>
                 </div>
                 <div class="-mx-3 md:flex mb-6">
@@ -956,31 +777,13 @@ export default function NewStudent() {
                     </label>
                     <input
                       onChange={(e) => {
-                        setAddress(e.target.value);
-                      }}
-                      class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
-                      id="application-link"
-                      type="text"
-                      placeholder="Village / Town"
-                    />
-                  </div>
-                </div>
-                <div class="-mx-3 md:flex mb-6">
-                  <div class="md:w-full px-3">
-                    <label
-                      class="uppercase tracking-wide text-black text-xs font-bold mb-2"
-                      for="application-link"
-                    >
-                      Post
-                    </label>
-                    <input
-                      onChange={(e) => {
                         setPlace(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Post"
+                      value={place}
+                      placeholder="Priorities etc"
                     />
                   </div>
                   <div class="md:w-full px-3">
@@ -988,7 +791,7 @@ export default function NewStudent() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="application-link"
                     >
-                      District
+                      City
                     </label>
                     <input
                       onChange={(e) => {
@@ -997,7 +800,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="District"
+                      value={city}
+                      placeholder="Priorities etc"
                     />
                   </div>
                 </div>
@@ -1016,7 +820,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Pin-Code"
+                      value={pincode}
+                      placeholder="Priorities etc"
                     />
                   </div>
 
@@ -1034,6 +839,7 @@ export default function NewStudent() {
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
+                        value={gender}
                       >
                         <option>Please Select</option>
                         <option>Male</option>
@@ -1057,7 +863,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Last School"
+                      value={lSchool}
+                      placeholder="Priorities etc"
                     />
                   </div>
                   <div class="md:w-full px-3">
@@ -1074,7 +881,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Last School Address"
+                      value={lSchoolAdd}
+                      placeholder="Priorities etc"
                     />
                   </div>
                 </div>
@@ -1093,7 +901,8 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
-                      placeholder="Last School Board"
+                      value={lSchoolBoard}
+                      placeholder="Priorities etc"
                     />
                   </div>
                   <div class="md:w-full px-3">
@@ -1110,6 +919,7 @@ export default function NewStudent() {
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="application-link"
                       type="text"
+                      value={lSchoolResult}
                       placeholder="Pass / Fail"
                     />
                   </div>
@@ -1130,6 +940,7 @@ export default function NewStudent() {
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="location"
+                        value={tcStatus}
                       >
                         <option>Please Select</option>
                         <option>Yes</option>
@@ -1146,17 +957,12 @@ export default function NewStudent() {
                       RTE Status
                     </label>
                     <div>
-                      <select
-                        onChange={(e) => {
-                          setRteStatus(e.target.value);
-                        }}
+                      <div
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="department"
                       >
-                        <option>Please Select</option>
-                        <option>Yes</option>
-                        <option>No</option>
-                      </select>
+                        {rteStatus}
+                      </div>
                     </div>
                   </div>
                   <div class="md:w-1/2 px-3">
@@ -1164,14 +970,15 @@ export default function NewStudent() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="department"
                     >
-                      Admission Date
+                      Update date
                     </label>
                     <div>
-                      <div class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3">
-                        <DatePicker
-                          selected={date}
-                          onChange={(e) => setDate(e)}
-                        />
+                      <div
+                        class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
+                        id="application-link"
+                        type="number"
+                      >
+                        {d}
                       </div>
                     </div>
                   </div>
@@ -1186,7 +993,7 @@ export default function NewStudent() {
                       Upload TC*
                     </label>
                     <div>
-                      {tcStatus.valueOf() == "Yes" && (
+                      {tcStatus === "Yes" && (
                         <>
                           <input
                             onChange={(e) => {
@@ -1222,6 +1029,7 @@ export default function NewStudent() {
                         }}
                         class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                         id="job-type"
+                        value={aadharStatus}
                       >
                         <option>Please Select</option>
                         <option>Yes</option>
@@ -1234,19 +1042,27 @@ export default function NewStudent() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="department"
                     >
-                      Aadhar Number*
+                      Upload Aadhar*
                     </label>
                     <div>
-                      {aadharStatus.valueOf() == "Yes" && (
+                      {aadharStatus === "Yes" && (
                         <>
                           <input
                             onChange={(e) => {
-                              setAadharUrl(e.target.value);
+                              setAadharFile(e.target.files[0]);
                             }}
-                            type="text"
-                            class="w-full bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
+                            type="file"
+                            class="w-auto bg-gray-200 border border-gray-200 text-black text-xs py-3 px-4 pr-8 mb-3 rounded"
                             id="location"
                           />
+                          <button
+                            onClick={(e) => {
+                              handleUploadAadhar(aadharFile);
+                            }}
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+                          >
+                            Upload
+                          </button>
                         </>
                       )}
                     </div>
@@ -1265,7 +1081,7 @@ export default function NewStudent() {
                         }}
                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full w-full  border border-gray-200  text-sm  pr-8 mb-3 hover:scale-105"
                       >
-                        Submit
+                        Update
                       </button>
                     </div>
                   </div>
@@ -1282,6 +1098,6 @@ export default function NewStudent() {
 
 {
   /* <div class="-mx-3 md:flex mt-2">
-                
-              </div> */
+                  
+                </div> */
 }

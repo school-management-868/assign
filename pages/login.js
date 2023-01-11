@@ -15,7 +15,10 @@ export default function Login() {
     setIsActive((current) => !current);
   };
 
+  const [isLoading, setisLoading] = useState(false);
   const handlesignin = (e) => {
+    setisLoading(true);
+    try{
     e.preventDefault();
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
@@ -24,6 +27,8 @@ export default function Login() {
         setUser(user);
         router.push("/home")
         // ...
+      }).then(()=>{
+        setisLoading(false);
       })
       .catch((error) => {
         const errorCode = error.code;
@@ -31,6 +36,7 @@ export default function Login() {
         // ..
         alert(errorMessage);
       });
+    }catch(e){}
   };
 
   return (
@@ -82,7 +88,7 @@ export default function Login() {
                 onClick={handlesignin}
                 class="bg-[#002D74] rounded-xl text-white py-2 hover:scale-105 duration-300"
               >
-                Login
+                {isLoading ?"Loading" :"Login"}
               </button>
             </form>
 

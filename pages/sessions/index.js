@@ -64,7 +64,7 @@ export default function index() {
     <>
       <div className="w-screen">
         <div class="bg-gray-100 flex bg-local w-screen">
-          <div class="bg-gray-100 mx-auto w-screen h-screen bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
+          <div class="bg-gray-100 mx-auto w-screen h-auto bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
               <h1 className="text-center font-bold text-2xl">
                 Add New Session

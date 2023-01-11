@@ -4,33 +4,18 @@ import React, { useContext, useEffect, useState } from "react";
 import UserContext from "../../context/userContext";
 import { db } from "../../../firebase";
 import { async } from "@firebase/util";
+import { useRouter } from "next/router";
 
 export default function Account() {
-  const months = [
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-    "January",
-    "February",
-    "March",
-  ];
-
   const [students, setStudents] = useState([]);
 
-  const [month, setMonth] = useState();
-  
+  const [examName, setExamName] = useState();
 
-  const getDues = async()=>{
+  const getStudents = async () => {
     try {
       const docRef = collection(
         db,
-        `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/due/${month}/students`
+        `users/${a.user}/sessions/${a.session}/classes/${className}/sections/${sectionName}/students`
       );
       const docSnap = await getDocs(docRef);
       var list = [];
@@ -39,17 +24,18 @@ export default function Account() {
       });
       setStudents(list);
     } catch (e) {
-      alert(e.message)
+      alert(e.message);
     }
-  }
+  };
 
   const [classList, setClassList] = useState([]);
+  const [examList, setExamList] = useState([]);
   const [sectionList, setSectionList] = useState([]);
   const a = useContext(UserContext);
   const [className, setClassName] = useState();
   const [sectionName, setSectionName] = useState("");
 
-  
+  const [data, setData] = useState();
 
   const GetClassList = async () => {
     try {
@@ -63,6 +49,22 @@ export default function Account() {
         list.push(doc.data());
       });
       setClassList(list);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+  const GetExamList = async () => {
+    try {
+      const docRef = collection(
+        db,
+        `users/${a.user}/sessions/${a.session}/exams`
+      );
+      const docSnap = await getDocs(docRef);
+      var list = [];
+      docSnap.forEach((doc) => {
+        list.push(doc.data());
+      });
+      setExamList(list);
     } catch (e) {
       console.log(e);
     }
@@ -89,17 +91,14 @@ export default function Account() {
     }
   };
 
-  var total = 0;
-
+  const router = useRouter();
   return (
     <>
       <div className="w-screen">
         <div class="bg-gray-100 flex bg-local w-screen">
           <div class="bg-gray-100 mx-auto w-screen h-auto bg-white py-20 px-12 lg:px-24 shadow-xl mb-24">
             <div>
-              <h1 className="text-center font-bold text-2xl">
-                View Dues
-              </h1>
+              <h1 className="text-center font-bold text-2xl">Insert Marks</h1>
               <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col">
                 <div class="-mx-3 md:flex mb-6">
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -109,7 +108,10 @@ export default function Account() {
                     >
                       Class*
                     </label>
-                    <select onClick={()=>{GetClassList()}}
+                    <select
+                      onClick={() => {
+                        GetClassList();
+                      }}
                       onChange={(e) => {
                         setClassName(e.target.value);
                       }}
@@ -119,7 +121,9 @@ export default function Account() {
                       placeholder="Netboard"
                     >
                       <option>Plese Select</option>
-                      {classList.map((e)=>{return(<option>{e.Name}</option>)})}
+                      {classList.map((e) => {
+                        return <option>{e.Name}</option>;
+                      })}
                     </select>
                   </div>
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -129,7 +133,10 @@ export default function Account() {
                     >
                       Section*
                     </label>
-                    <select onClick={()=>{GetSectionList()}}
+                    <select
+                      onClick={() => {
+                        GetSectionList();
+                      }}
                       onChange={(e) => {
                         setSectionName(e.target.value);
                       }}
@@ -139,7 +146,9 @@ export default function Account() {
                       placeholder="Netboard"
                     >
                       <option>Plese Select</option>
-                      {sectionList.map((e)=>{return(<option>{e.Name}</option>)})}
+                      {sectionList.map((e) => {
+                        return <option>{e.Name}</option>;
+                      })}
                     </select>
                   </div>
                   <div class="md:w-1/2 px-3 mb-6 md:mb-0">
@@ -147,11 +156,14 @@ export default function Account() {
                       class="uppercase tracking-wide text-black text-xs font-bold mb-2"
                       for="company"
                     >
-                      Month*
+                      Exam*
                     </label>
-                    <select 
+                    <select
+                      onClick={() => {
+                        GetExamList();
+                      }}
                       onChange={(e) => {
-                        setMonth(e.target.value);
+                        setExamName(e.target.value);
                       }}
                       class="w-full bg-gray-200 text-black border border-gray-200 rounded py-3 px-4 mb-3"
                       id="company"
@@ -159,13 +171,19 @@ export default function Account() {
                       placeholder="Netboard"
                     >
                       <option>Plese Select</option>
-                      {months.map((e)=>{return(<option>{e}</option>)})}
+                      {examList.map((e) => {
+                        return <option>{e.Name}</option>;
+                      })}
                     </select>
                   </div>
-                  
+
                   <button
                     onClick={() => {
-                      getDues();
+                      if (!className || !sectionName || !examName) {
+                        alert("data missing ");
+                      } else {
+                        getStudents();
+                      }
                     }}
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   >
@@ -194,22 +212,12 @@ export default function Account() {
                       Mobile
                     </th>
                     <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      month
-                    </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Fee Due
-                    </th>
-                      <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                        Transport Due
-                      </th>
-                    <th class="bg-gray-600 p-2 text-white font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                      Total
+                      Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody class="block md:table-row-group">
                   {students.map((e, index) => {
-                   total += e.total>0?Number(e.total):0;
                     return (
                       <tr
                         key={index}
@@ -231,7 +239,7 @@ export default function Account() {
                           <span class="inline-block w-1/3 md:hidden font-bold">
                             fName
                           </span>
-                          {e.father_name}
+                          {e.Father_Name}
                         </td>
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
@@ -243,47 +251,29 @@ export default function Account() {
                           <span class="inline-block w-1/3 md:hidden font-bold">
                             mobile
                           </span>
-                          {e.Mobile}
+                          {e.Mobile_Number}
                         </td>
+
                         <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
                           <span class="inline-block w-1/3 md:hidden font-bold">
-                            month
+                            Actions
                           </span>
-                          {e.month}
+                          <button
+                            onClick={() => {
+                                e["exam"] = examName;
+                              router.push({
+                                pathname: "/sessions/exams/insert",
+                                query: e,
+                              });
+                            }}
+                            class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 border border-red-500 rounded"
+                          >
+                            Insert Marks
+                          </button>
                         </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            fee_due
-                          </span>
-                          {e.month_Due>0?e.month_Due:0}
-                        </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            transport_due
-                          </span>
-                          {e.transport_due>0?e.transport_due:0}
-                        </td>
-                        <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                          <span class="inline-block w-1/3 md:hidden font-bold">
-                            total
-                          </span>
-                          {(e.month_Due>0?e.month_Due:0)+(e.transport_due>0?e.transport_due:0)}
-                        </td>
-                        
                       </tr>
                     );
                   })}
-                  <tr class="bg-gray-300 border border-grey-500 md:border-none block md:table-row">
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell"></td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell font-bold">Total</td>
-                    <td class="p-2 md:border md:border-grey-500 text-left block md:table-cell font-bold text-red-600">{total}</td>
-                  </tr>
                 </tbody>
               </table>
             </div>

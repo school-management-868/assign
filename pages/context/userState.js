@@ -18,7 +18,7 @@ const UserState = (props) => {
         setSession(user.photoURL);
       } else {
         console.log("logged out ");
-        router.push("/login");
+        router.push("/");
       }
     });
     
